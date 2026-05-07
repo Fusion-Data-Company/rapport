@@ -4,7 +4,7 @@ export default function SignUpPage() {
   return (
     <div className="min-h-screen flex items-center justify-center"
       style={{ background: "var(--surface-base)" }}>
-      <SignUp />
+      <SignUp fallbackRedirectUrl="/onboarding" signInUrl="/sign-in" />
     </div>
   )
 }
