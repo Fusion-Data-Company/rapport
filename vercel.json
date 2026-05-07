@@ -1,0 +1,12 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/daily-sends",
+      "schedule": "0 14 * * *"
+    },
+    {
+      "path": "/api/cron/sports-monitor",
+      "schedule": "0 16,22,4 * * *"
+    }
+  ]
+}
