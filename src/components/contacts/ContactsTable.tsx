@@ -4,7 +4,7 @@ import {
   useReactTable, getCoreRowModel, getFilteredRowModel,
   getSortedRowModel, getPaginationRowModel, flexRender,
   type ColumnDef, type SortingState, type VisibilityState,
-  type ColumnFiltersState, type PaginationState,
+  type ColumnFiltersState, type PaginationState, type ColumnSizingState,
 } from "@tanstack/react-table"
 import { useVirtualizer } from "@tanstack/react-virtual"
 import { motion, AnimatePresence } from "framer-motion"
@@ -348,6 +348,7 @@ export default function ContactsTable({ contacts, onUpdate, onDelete, onAdd, onI
   const [rowSelection, setRowSelection] = useState({})
   const [globalFilter, setGlobalFilter] = useState("")
   const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 100 })
+  const [columnSizing, setColumnSizing] = useState<ColumnSizingState>({})
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const parentRef = useRef<HTMLDivElement>(null)
 
@@ -360,13 +361,15 @@ export default function ContactsTable({ contacts, onUpdate, onDelete, onAdd, onI
   const table = useReactTable({
     data: contacts,
     columns,
-    state: { sorting, columnFilters, columnVisibility, rowSelection, globalFilter, pagination },
+    columnResizeMode: "onChange",
+    state: { sorting, columnFilters, columnVisibility, rowSelection, globalFilter, pagination, columnSizing },
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: setRowSelection,
     onGlobalFilterChange: setGlobalFilter,
     onPaginationChange: setPagination,
+    onColumnSizingChange: setColumnSizing,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
@@ -452,13 +455,35 @@ export default function ContactsTable({ contacts, onUpdate, onDelete, onAdd, onI
               {table.getHeaderGroups().map(hg => (
                 <tr key={hg.id}>
                   {hg.headers.map(header => (
-                    <th key={header.id} style={{ ...TH, width: header.getSize(), minWidth: header.getSize(), maxWidth: header.getSize() }}
-                      onClick={header.column.getToggleSortingHandler()}>
-                      <div className="flex items-center gap-1">
+                    <th
+                      key={header.id}
+                      style={{ ...TH, width: header.getSize(), minWidth: header.getSize(), maxWidth: header.getSize(), position: "relative", userSelect: "none" }}
+                      onClick={header.column.getCanSort() ? header.column.getToggleSortingHandler() : undefined}
+                    >
+                      <div className="flex items-center gap-1 overflow-hidden">
                         {flexRender(header.column.columnDef.header, header.getContext())}
-                        {header.column.getIsSorted() === "asc" && <ChevronUp className="w-3 h-3 ml-auto text-[var(--teal)]" />}
-                        {header.column.getIsSorted() === "desc" && <ChevronDown className="w-3 h-3 ml-auto text-[var(--teal)]" />}
+                        {header.column.getIsSorted() === "asc" && <ChevronUp className="w-3 h-3 ml-auto shrink-0 text-[var(--teal)]" />}
+                        {header.column.getIsSorted() === "desc" && <ChevronDown className="w-3 h-3 ml-auto shrink-0 text-[var(--teal)]" />}
                       </div>
+                      {/* Resize handle */}
+                      {header.column.getCanResize() && (
+                        <div
+                          onMouseDown={header.getResizeHandler()}
+                          onTouchStart={header.getResizeHandler()}
+                          onClick={e => e.stopPropagation()}
+                          style={{
+                            position: "absolute", top: 0, right: 0,
+                            width: 4, height: "100%",
+                            cursor: "col-resize",
+                            background: header.column.getIsResizing()
+                              ? "var(--teal)"
+                              : "transparent",
+                            transition: "background 150ms",
+                            zIndex: 1,
+                          }}
+                          className="group-hover:bg-[rgba(43,168,162,0.4)] hover:!bg-[var(--teal)]"
+                        />
+                      )}
                     </th>
                   ))}
                 </tr>
