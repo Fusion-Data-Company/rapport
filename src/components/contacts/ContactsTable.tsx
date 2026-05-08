@@ -442,11 +442,17 @@ export default function ContactsTable({ contacts, onUpdate, onDelete, onAdd, onI
       <div className="flex flex-1 overflow-hidden relative">
         <div ref={parentRef} className="flex-1 overflow-auto">
           <table className="rapport-table" style={{ width: table.getTotalSize(), tableLayout: "fixed" }}>
+            {/* colgroup locks every column to its exact pixel width — prevents auto layout from shrinking cells */}
+            <colgroup>
+              {table.getVisibleLeafColumns().map(col => (
+                <col key={col.id} style={{ width: col.getSize(), minWidth: col.getSize(), maxWidth: col.getSize() }} />
+              ))}
+            </colgroup>
             <thead style={{ position: "sticky", top: 0, zIndex: 20 }}>
               {table.getHeaderGroups().map(hg => (
                 <tr key={hg.id}>
                   {hg.headers.map(header => (
-                    <th key={header.id} style={{ ...TH, width: header.getSize() }}
+                    <th key={header.id} style={{ ...TH, width: header.getSize(), minWidth: header.getSize(), maxWidth: header.getSize() }}
                       onClick={header.column.getToggleSortingHandler()}>
                       <div className="flex items-center gap-1">
                         {flexRender(header.column.columnDef.header, header.getContext())}
@@ -478,7 +484,7 @@ export default function ContactsTable({ contacts, onUpdate, onDelete, onAdd, onI
                     transition={{ duration: 0.1 }}
                   >
                     {row.getVisibleCells().map(cell => (
-                      <td key={cell.id} style={{ ...TD, width: cell.column.getSize() }}>
+                      <td key={cell.id} style={{ ...TD, width: cell.column.getSize(), minWidth: cell.column.getSize(), maxWidth: cell.column.getSize() }}>
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                       </td>
                     ))}
