@@ -348,7 +348,12 @@ export default function ContactsTable({ contacts, onUpdate, onDelete, onAdd, onI
   const [rowSelection, setRowSelection] = useState({})
   const [globalFilter, setGlobalFilter] = useState("")
   const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 100 })
-  const [columnSizing, setColumnSizing] = useState<ColumnSizingState>({})
+  const [columnSizing, setColumnSizing] = useState<ColumnSizingState>(() => {
+    try {
+      const saved = localStorage.getItem("rapport:contact-col-sizing")
+      return saved ? (JSON.parse(saved) as ColumnSizingState) : {}
+    } catch { return {} }
+  })
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const parentRef = useRef<HTMLDivElement>(null)
 
@@ -369,7 +374,13 @@ export default function ContactsTable({ contacts, onUpdate, onDelete, onAdd, onI
     onRowSelectionChange: setRowSelection,
     onGlobalFilterChange: setGlobalFilter,
     onPaginationChange: setPagination,
-    onColumnSizingChange: setColumnSizing,
+    onColumnSizingChange: (updater) => {
+      setColumnSizing(prev => {
+        const next = typeof updater === "function" ? updater(prev) : updater
+        try { localStorage.setItem("rapport:contact-col-sizing", JSON.stringify(next)) } catch {}
+        return next
+      })
+    },
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
@@ -497,7 +508,7 @@ export default function ContactsTable({ contacts, onUpdate, onDelete, onAdd, onI
                     key={row.id}
                     data-index={vi.index}
                     ref={rowVirtualizer.measureElement}
-                    style={{ transform: `translateY(${vi.start}px)`, position: "absolute", width: "100%", display: "table-row", background: vi.index % 2 === 0 ? "rgba(15,28,48,0.25)" : "transparent" }}
+                    style={{ transform: `translateY(${vi.start}px)`, position: "absolute", width: table.getTotalSize(), display: "table-row", background: vi.index % 2 === 0 ? "rgba(15,28,48,0.25)" : "transparent" }}
                     className={cn(
                       "cursor-pointer",
                       row.getIsSelected() && "selected",
