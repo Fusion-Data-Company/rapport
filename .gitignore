@@ -5,3 +5,10 @@ node_modules/
 .vercel/
 *.tsbuildinfo
 .vercel
+
+# clerk configuration (can include secrets)
+/.clerk/
+
+# uploaded card images (tracked via DB, not git)
+public/uploads/**
+!public/uploads/**/.gitkeep
