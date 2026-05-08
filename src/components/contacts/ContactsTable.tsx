@@ -19,7 +19,8 @@ import { GlassButton } from "@/components/ui/glass-button"
 import { GlassInput } from "@/components/ui/glass-input"
 import ContactSlidePanel from "./ContactSlidePanel"
 import { cn, getInitials, formatDate } from "@/lib/utils"
-type Contact = any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type Contact = Record<string, any>
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -28,15 +29,15 @@ const TH: React.CSSProperties = {
   whiteSpace: "nowrap", fontSize: "10px", fontWeight: 700,
   textTransform: "uppercase", letterSpacing: "0.08em",
   color: "rgba(100,116,139,0.9)",
-  borderBottom: "1px solid rgba(43,168,162,0.10)",
+  border: "1px solid rgba(43,168,162,0.18)",
   background: "rgba(9,17,31,0.95)",
 }
 const TD: React.CSSProperties = {
   padding: "6px 10px", boxSizing: "border-box", verticalAlign: "middle",
   overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis",
-  fontSize: "13px", fontWeight: 500,
+  fontSize: "12px", fontWeight: 500,
   color: "rgba(226,232,240,0.85)",
-  borderBottom: "1px solid rgba(148,163,184,0.04)",
+  border: "1px solid rgba(43,168,162,0.10)",
 }
 
 function ScoreBadge({ score }: { score: number }) {
@@ -82,14 +83,14 @@ function buildColumns(onUpdate: (id: string, field: string, value: unknown) => v
 
     // Score
     {
-      id: "score", accessorKey: "enrichmentScore", size: 90,
+      id: "score", accessorKey: "enrichmentScore", size: 88,
       header: "Score",
       cell: ({ getValue }) => <ScoreBadge score={(getValue() as number) ?? 0} />,
     },
 
     // Name
     {
-      id: "name", size: 200,
+      id: "name", size: 180,
       header: "Name",
       accessorFn: row => `${row.firstName} ${row.lastName ?? ""}`.trim(),
       cell: ({ row }) => (
@@ -103,7 +104,7 @@ function buildColumns(onUpdate: (id: string, field: string, value: unknown) => v
               {row.original.firstName} {row.original.lastName ?? ""}
             </p>
             {row.original.nickname && (
-              <p className="text-[11px] text-[var(--text-muted)] truncate">"{row.original.nickname}"</p>
+              <p className="text-[11px] text-[var(--text-muted)] truncate">&ldquo;{row.original.nickname}&rdquo;</p>
             )}
           </div>
         </div>
@@ -123,11 +124,11 @@ function buildColumns(onUpdate: (id: string, field: string, value: unknown) => v
     },
 
     // Title
-    { id: "title", accessorKey: "jobTitle", size: 150, header: "Title" },
+    { id: "title", accessorKey: "jobTitle", size: 140, header: "Title" },
 
     // Email
     {
-      id: "email", accessorKey: "email", size: 200,
+      id: "email", accessorKey: "email", size: 190,
       header: "Email",
       cell: ({ getValue }) => {
         const v = getValue() as string
@@ -142,7 +143,7 @@ function buildColumns(onUpdate: (id: string, field: string, value: unknown) => v
 
     // Phone
     {
-      id: "phone", accessorKey: "phone", size: 140,
+      id: "phone", accessorKey: "phone", size: 130,
       header: "Phone",
       cell: ({ getValue }) => {
         const v = getValue() as string
@@ -157,7 +158,7 @@ function buildColumns(onUpdate: (id: string, field: string, value: unknown) => v
 
     // Social Media (all 5 icons in one column)
     {
-      id: "social", size: 165, enableSorting: false,
+      id: "social", size: 100, enableSorting: false,
       header: "Social",
       cell: ({ row }) => (
         <div className="flex items-center gap-1.5" onClick={e => e.stopPropagation()}>
@@ -201,53 +202,70 @@ function buildColumns(onUpdate: (id: string, field: string, value: unknown) => v
     },
 
     // Status
-    { id: "status", accessorKey: "status", size: 110, header: "Status", cell: ({ getValue }) => <StatusBadge status={getValue() as string} /> },
+    { id: "status", accessorKey: "status", size: 80, header: "Status", cell: ({ getValue }) => <StatusBadge status={getValue() as string} /> },
 
     // Birthday
-    { id: "birthday", accessorKey: "birthdate", size: 110, header: "Birthday", cell: ({ getValue }) => formatDate(getValue() as string | null, { month: "short", day: "numeric" }) },
+    {
+      id: "birthday", accessorKey: "birthdate", size: 96, header: "Birthday",
+      cell: ({ getValue }) => {
+        const v = getValue() as string | null
+        if (!v) return <span style={{color:"rgba(100,116,139,0.5)"}}>—</span>
+        const d = new Date(v + "T12:00:00")
+        return <span>{d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</span>
+      },
+    },
 
     // Anniversary
-    { id: "anniversary", accessorKey: "anniversary", size: 110, header: "Anniversary", cell: ({ getValue }) => formatDate(getValue() as string | null, { month: "short", day: "numeric" }) },
+    {
+      id: "anniversary", accessorKey: "anniversary", size: 96, header: "Anniversary",
+      cell: ({ getValue }) => {
+        const v = getValue() as string | null
+        if (!v) return <span style={{color:"rgba(100,116,139,0.5)"}}>—</span>
+        const d = new Date(v + "T12:00:00")
+        return <span>{d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</span>
+      },
+    },
 
     // Spouse
-    { id: "spouse", accessorKey: "spouseName", size: 130, header: "Spouse" },
+    { id: "spouse", accessorKey: "spouseName", size: 140, header: "Spouse" },
 
     // City
-    { id: "city", accessorKey: "city", size: 120, header: "City" },
+    { id: "city", accessorKey: "city", size: 90, header: "City" },
 
     // Hometown
-    { id: "hometown", accessorKey: "placeHometown", size: 130, header: "Hometown" },
+    { id: "hometown", accessorKey: "placeHometown", size: 120, header: "Hometown" },
 
     // College
-    { id: "college", accessorKey: "college", size: 150, header: "College" },
+    { id: "college", accessorKey: "college", size: 140, header: "College" },
 
     // Hobbies
     { id: "hobbies", accessorKey: "hobbies", size: 180, header: "Hobbies" },
 
     // Car
-    { id: "car", accessorKey: "carType", size: 130, header: "Car" },
+    { id: "car", accessorKey: "carType", size: 160, header: "Car" },
 
     // Clubs
-    { id: "clubs", accessorKey: "clubs", size: 160, header: "Clubs / Orgs" },
+    { id: "clubs", accessorKey: "clubs", size: 180, header: "Clubs / Orgs" },
 
     // Religion
-    { id: "religion", accessorKey: "religion", size: 120, header: "Religion" },
+    { id: "religion", accessorKey: "religion", size: 96, header: "Religion" },
 
     // Hobbies / Vacation
-    { id: "vacation", accessorKey: "vacationHabits", size: 160, header: "Vacation Style" },
+    { id: "vacation", accessorKey: "vacationHabits", size: 180, header: "Vacation Style" },
 
     // Fav Lunch
-    { id: "lunch", accessorKey: "favoriteLunchRestaurant", size: 160, header: "Fav Lunch Spot" },
+    { id: "lunch", accessorKey: "favoriteLunchRestaurant", size: 120, header: "Fav Lunch Spot" },
 
     // Fav Dinner
-    { id: "dinner", accessorKey: "favoriteDinnerRestaurant", size: 160, header: "Fav Dinner Spot" },
+    { id: "dinner", accessorKey: "favoriteDinnerRestaurant", size: 120, header: "Fav Dinner Spot" },
 
     // Drink
     {
-      id: "drinks", accessorKey: "drinks", size: 80, header: "Drinks?",
+      id: "drinks", accessorKey: "drinks", size: 68, header: "Drinks?",
       cell: ({ getValue }) => {
         const v = getValue() as boolean | null
-        return v === null ? "—" : v ? <Check className="w-3.5 h-3.5 text-[var(--teal)]" /> : <span className="text-[var(--text-muted)]">No</span>
+        if (v === null || v === undefined) return <span style={{color:"rgba(100,116,139,0.5)"}}>—</span>
+        return <span style={{color: v ? "var(--teal)" : "rgba(100,116,139,0.7)", fontWeight:600}}>{v ? "Yes" : "No"}</span>
       },
     },
 
@@ -448,7 +466,7 @@ export default function ContactsTable({ contacts, onUpdate, onDelete, onAdd, onI
                     key={row.id}
                     data-index={vi.index}
                     ref={rowVirtualizer.measureElement}
-                    style={{ transform: `translateY(${vi.start}px)`, position: "absolute", width: "100%", display: "table-row" }}
+                    style={{ transform: `translateY(${vi.start}px)`, position: "absolute", width: "100%", display: "table-row", background: vi.index % 2 === 0 ? "rgba(15,28,48,0.25)" : "transparent" }}
                     className={cn(
                       "cursor-pointer",
                       row.getIsSelected() && "selected",

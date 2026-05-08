@@ -108,7 +108,7 @@ export default function DashboardPage() {
   const isDev = process.env.NODE_ENV !== "production"
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
+    <div className="p-6 max-w-7xl mx-auto space-y-6 min-h-full">
       {/* Page header */}
       <div className="flex items-center justify-between">
         <div>
@@ -148,7 +148,7 @@ export default function DashboardPage() {
         variants={CONTAINER}
         initial="hidden"
         animate="show"
-        className="grid grid-cols-4 gap-4"
+        className="grid grid-cols-2 lg:grid-cols-4 gap-4"
       >
         <StatCard
           icon={Mail}
@@ -181,9 +181,9 @@ export default function DashboardPage() {
       </motion.div>
 
       {/* Content row */}
-      <div className="grid grid-cols-3 gap-5 items-stretch">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-stretch">
         {/* Going Out Today — 2/3 */}
-        <GlassCard className="col-span-2 p-5">
+        <GlassCard className="col-span-2 p-5 min-h-[280px]">
           <div className="flex items-center gap-2 mb-4">
             <div className="w-2 h-2 rounded-full bg-[var(--teal)] animate-pulse" />
             <h3 className="font-bold text-white">Going Out Today</h3>
@@ -229,7 +229,7 @@ export default function DashboardPage() {
         </GlassCard>
 
         {/* Coming Up — 1/3 */}
-        <GlassCard className="p-5">
+        <GlassCard className="p-5 min-h-[280px]">
           <div className="flex items-center gap-2 mb-4">
             <Calendar className="w-4 h-4 text-[var(--gold)]" />
             <h3 className="font-bold text-white text-sm">Coming Up</h3>
