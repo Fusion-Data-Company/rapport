@@ -11,7 +11,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import {
   Search, Plus, Upload, ChevronUp, ChevronDown,
   ChevronsLeft, ChevronLeft, ChevronRight, ChevronsRight, Eye,
-  Mail, Phone, Building, User, MapPin, Check,
+  Mail, Phone, Building, User, MapPin,
 } from "lucide-react"
 import { FacebookIcon, LinkedInIcon, InstagramIcon, TikTokIcon, XIcon, MapPinIcon, SocialIconCell } from "@/components/ui/social-icons"
 import { GlassCard } from "@/components/ui/glass-card"
