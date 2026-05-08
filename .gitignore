@@ -9,6 +9,9 @@ node_modules/
 # clerk configuration (can include secrets)
 /.clerk/
 
+# brainstorm session files (ephemeral, not for source control)
+.superpowers/brainstorm/
+
 # uploaded card images (tracked via DB, not git)
 public/uploads/**
 !public/uploads/**/.gitkeep
