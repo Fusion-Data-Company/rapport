@@ -9,6 +9,22 @@ import {
   CheckCircle, Calendar, Plus, Sprout
 } from "lucide-react"
 
+interface ScheduledSend {
+  id: string
+  contactFirstName?: string
+  contactLastName?: string
+  occasionLabel: string
+  status: string
+}
+
+interface UpcomingItem {
+  id: string
+  contactFirstName?: string
+  contactLastName?: string
+  occasionLabel: string
+  scheduledDate: string
+}
+
 const STAGGER = { hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0 } }
 const CONTAINER = { hidden: {}, show: { transition: { staggerChildren: 0.07 } } }
 
@@ -184,7 +200,7 @@ export default function DashboardPage() {
             </div>
           ) : (
             <div className="space-y-2">
-              {todaySends.slice(0, 8).map((send: any) => (
+              {todaySends.slice(0, 8).map((send: ScheduledSend) => (
                 <div
                   key={send.id}
                   className="flex items-center gap-3 p-3 rounded-xl bg-slate-900/50 hover:bg-slate-800/50 transition-colors"
@@ -232,7 +248,7 @@ export default function DashboardPage() {
             </div>
           ) : (
             <div className="space-y-1">
-              {upcoming.slice(0, 10).map((item: any) => (
+              {upcoming.slice(0, 10).map((item: UpcomingItem) => (
                 <div
                   key={item.id}
                   className="flex items-start gap-2.5 py-2 border-b border-[var(--surface-border)] last:border-0"
