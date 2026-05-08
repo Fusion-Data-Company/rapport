@@ -1,12 +1,8 @@
 import { NextResponse } from "next/server"
 import { auth } from "@clerk/nextjs/server"
-import { db, cardTemplates, tenantUsers } from "@/lib/db"
+import { db, cardTemplates } from "@/lib/db"
 import { eq, and } from "drizzle-orm"
-
-async function getTenantId(userId: string) {
-  const u = await db.query.tenantUsers.findFirst({ where: eq(tenantUsers.clerkUserId, userId) })
-  return u?.tenantId ?? null
-}
+import { getTenantId } from "@/lib/auth"
 
 export async function DELETE(
   _req: Request,

@@ -1,15 +1,10 @@
 import { NextResponse } from "next/server"
 import { auth } from "@clerk/nextjs/server"
-import { db, cardTemplates, tenantUsers } from "@/lib/db"
-import { eq } from "drizzle-orm"
+import { db, cardTemplates } from "@/lib/db"
 import { writeFile, mkdir } from "fs/promises"
 import { join } from "path"
 import { randomUUID } from "crypto"
-
-async function getTenantId(userId: string) {
-  const u = await db.query.tenantUsers.findFirst({ where: eq(tenantUsers.clerkUserId, userId) })
-  return u?.tenantId ?? null
-}
+import { getTenantId } from "@/lib/auth"
 
 export async function POST(req: Request) {
   try {
@@ -27,10 +22,22 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing file or occasionType" }, { status: 400 })
     }
 
+    const ALLOWED_EXTS = new Set(["jpg", "jpeg", "png", "gif", "webp", "avif"])
+    const ALLOWED_MIME = new Set(["image/jpeg", "image/png", "image/gif", "image/webp", "image/avif"])
+    const MAX_BYTES = 10 * 1024 * 1024 // 10 MB
+
+    if (file.size > MAX_BYTES) {
+      return NextResponse.json({ error: "File too large (max 10 MB)" }, { status: 413 })
+    }
+
+    const ext = (file.name.split(".").pop() ?? "").toLowerCase()
+    if (!ALLOWED_EXTS.has(ext) || !ALLOWED_MIME.has(file.type)) {
+      return NextResponse.json({ error: "Unsupported file type. Allowed: jpg, jpeg, png, gif, webp, avif" }, { status: 415 })
+    }
+
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
 
-    const ext = (file.name.split(".").pop() ?? "jpg").toLowerCase()
     const filename = `${randomUUID()}.${ext}`
     const uploadDir = join(process.cwd(), "public", "uploads", "cards")
 

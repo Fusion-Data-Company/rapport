@@ -354,4 +354,5 @@ export const contactSportsTeamsRelations = relations(contactSportsTeams, ({ one 
 export const scheduledSendsRelations = relations(scheduledSends, ({ one }) => ({
   contact: one(contacts, { fields: [scheduledSends.contactId], references: [contacts.id] }),
   tenant: one(tenants, { fields: [scheduledSends.tenantId], references: [tenants.id] }),
+  cardTemplate: one(cardTemplates, { fields: [scheduledSends.cardTemplateId], references: [cardTemplates.id] }),
 }))

@@ -2,18 +2,14 @@ import { NextResponse } from "next/server"
 import { auth } from "@clerk/nextjs/server"
 import {
   db, contacts, contactChildren, contactSportsTeams,
-  scheduledSends, tenantUsers,
+  scheduledSends,
 } from "@/lib/db"
 import { eq, and } from "drizzle-orm"
-
-async function getTenantId(userId: string) {
-  const u = await db.query.tenantUsers.findFirst({ where: eq(tenantUsers.clerkUserId, userId) })
-  return u?.tenantId ?? null
-}
+import { getTenantId } from "@/lib/auth"
 
 export async function POST() {
-  if (process.env.NODE_ENV === "production") {
-    return NextResponse.json({ error: "Not available in production" }, { status: 403 })
+  if (process.env.NODE_ENV === "production" || process.env.ENABLE_DEV_ROUTES !== "true") {
+    return NextResponse.json({ error: "Not available" }, { status: 403 })
   }
 
   try {
