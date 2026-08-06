@@ -5,7 +5,7 @@ import { UserButton } from "@clerk/nextjs"
 import { motion } from "framer-motion"
 import {
   LayoutDashboard, Users, CreditCard, Activity,
-  Calendar, Settings, ChevronRight, Heart
+  Calendar, Settings, Heart
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import Paige from "@/components/Paige"
@@ -24,45 +24,52 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex h-screen overflow-hidden" style={{ background: "var(--surface-base)" }}>
-      {/* Sidebar */}
-      <aside className="w-56 shrink-0 flex flex-col border-r border-[var(--surface-border)] overflow-y-auto">
-        {/* Logo */}
-        <div className="flex items-center gap-2.5 px-5 py-5 border-b border-[var(--surface-border)]">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center"
-            style={{ background: "linear-gradient(135deg, var(--teal), var(--teal-dark))", boxShadow: "var(--shadow-teal-glow)" }}>
+      {/* Sidebar — icon rail */}
+      <aside className="w-14 shrink-0 flex flex-col border-r border-[var(--surface-border)]">
+        {/* Logo mark */}
+        <div className="flex items-center justify-center h-14 border-b border-[var(--surface-border)]">
+          <div
+            className="w-8 h-8 rounded-lg flex items-center justify-center"
+            style={{
+              background: "linear-gradient(135deg, var(--teal), var(--teal-dark))",
+              boxShadow: "var(--shadow-teal-glow)",
+            }}
+          >
             <Heart className="w-4 h-4 text-white" />
-          </div>
-          <div>
-            <p className="text-sm font-bold text-white tracking-tight" style={{ fontFamily: "'Playfair Display', serif" }}>Rapport</p>
-            <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-widest">CRM</p>
           </div>
         </div>
 
-        {/* Nav */}
-        <nav className="flex-1 p-3 space-y-0.5">
+        {/* Nav icons */}
+        <nav className="flex-1 flex flex-col items-center gap-1 py-3">
           {NAV.map(({ href, icon: Icon, label }) => {
             const active = pathname === href || (href !== "/dashboard" && pathname.startsWith(href))
             return (
-              <Link key={href} href={href} className={cn("nav-item", active && "active")}>
-                <Icon className="w-4 h-4 shrink-0" />
-                <span>{label}</span>
-                {active && <ChevronRight className="w-3 h-3 ml-auto opacity-50" />}
+              <Link
+                key={href}
+                href={href}
+                title={label}
+                className={cn(
+                  "w-10 h-10 rounded-xl flex items-center justify-center transition-all",
+                  active
+                    ? "bg-[rgba(43,168,162,0.15)] text-[var(--teal-light)] shadow-[inset_3px_0_0_var(--teal)]"
+                    : "text-[var(--text-muted)] hover:bg-[rgba(43,168,162,0.08)] hover:text-[var(--text-primary)]"
+                )}
+              >
+                <Icon className="w-4 h-4" />
               </Link>
             )
           })}
         </nav>
 
-        {/* User */}
-        <div className="p-4 border-t border-[var(--surface-border)] flex items-center gap-3">
-          <UserButton appearance={{
-            elements: {
-              avatarBox: "w-8 h-8 ring-1 ring-[var(--teal)] ring-offset-1 ring-offset-[var(--surface-base)]",
-            }
-          }} />
-          <div className="min-w-0">
-            <p className="text-xs font-semibold text-[var(--text-primary)] truncate">My Account</p>
-            <p className="text-[10px] text-[var(--text-muted)]">Starter Plan</p>
-          </div>
+        {/* User button */}
+        <div className="flex items-center justify-center h-14 border-t border-[var(--surface-border)]">
+          <UserButton
+            appearance={{
+              elements: {
+                avatarBox: "w-8 h-8 ring-1 ring-[var(--teal)] ring-offset-1 ring-offset-[var(--surface-base)]",
+              },
+            }}
+          />
         </div>
       </aside>
 
@@ -79,7 +86,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         </motion.div>
       </main>
 
-      {/* Paige widget */}
       <Paige />
     </div>
   )
