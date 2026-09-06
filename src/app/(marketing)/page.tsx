@@ -74,7 +74,7 @@ export default function HomePage() {
               "AI-written birthday, anniversary and milestone emails",
               "Greeting card gallery, including your own uploads",
               "Sports score monitoring via ESPN",
-              "Bring your own email (Resend) and LLM API keys",
+              "Sends from your own mailbox; bring your own LLM key or use ours",
             ].map(f => (
               <div key={f} style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 8 }}>
                 <CheckCircle size={14} color="#2BA8A2" />

@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server"
-import { db, contacts, contactChildren, scheduledSends, cardTemplates, tenants, tenantLlmConfig, tenantEmailConfig, sendLog } from "@/lib/db"
+import { db, contacts, contactChildren, scheduledSends, cardTemplates, tenants, tenantLlmConfig, sendLog } from "@/lib/db"
 import { eq, and, sql } from "drizzle-orm"
 import { generateEmailContent, type LLMConfig } from "@/lib/llm"
-import { Resend } from "resend"
+import { sendMail } from "@/lib/mailer"
 import { unsubscribeUrl } from "@/lib/unsubscribe"
 
 export const runtime = "nodejs"
@@ -107,14 +107,11 @@ export async function GET(req: Request) {
         })
 
         // Send email
-        const emailCfg = await db.query.tenantEmailConfig.findFirst({ where: eq(tenantEmailConfig.tenantId, tenant.id) })
         const toEmail = contactData.email
         if (!toEmail || contactData.unsubscribed) { processed++; continue }
 
         const unsubUrl = unsubscribeUrl(contactData.id)
-        await sendEmail({
-          apiKey: emailCfg?.apiKeyEncrypted ?? process.env.RESEND_API_KEY!,
-          provider: emailCfg?.provider ?? "resend",
+        await sendMail(tenant.id, {
           from: `${tenant.fromName} <${tenant.fromEmail}>`,
           to: toEmail,
           subject,
@@ -153,13 +150,10 @@ export async function GET(req: Request) {
           continue
         }
 
-        const emailCfg = await db.query.tenantEmailConfig.findFirst({ where: eq(tenantEmailConfig.tenantId, send.tenantId) })
         const card = await db.query.cardTemplates.findFirst({ where: and(eq(cardTemplates.occasionType, send.occasionType), eq(cardTemplates.isActive, true)) })
 
         const unsubUrl = unsubscribeUrl(contact.id)
-        await sendEmail({
-          apiKey: emailCfg?.apiKeyEncrypted ?? process.env.RESEND_API_KEY!,
-          provider: emailCfg?.provider ?? "resend",
+        await sendMail(send.tenantId, {
           from: `${tenant.fromName} <${tenant.fromEmail}>`,
           to: contact.email,
           subject: send.emailSubject ?? "Thinking of you!",
@@ -181,22 +175,6 @@ export async function GET(req: Request) {
     console.error("Daily cron error:", e)
     return NextResponse.json({ error: "Cron failed" }, { status: 500 })
   }
-}
-
-async function sendEmail({ apiKey, provider, from, to, subject, html, unsubscribeUrl }: {
-  apiKey: string; provider: string; from: string; to: string; subject: string; html: string; unsubscribeUrl: string
-}) {
-  if (provider === "resend") {
-    const resend = new Resend(apiKey)
-    await resend.emails.send({
-      from, to, subject, html,
-      headers: {
-        "List-Unsubscribe": `<${unsubscribeUrl}>`,
-        "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
-      },
-    })
-  }
-  // TODO: sendgrid, gmail providers
 }
 
 function buildEmailHtml({ body, cardUrl, businessName, fromName, unsubscribeUrl }: {
