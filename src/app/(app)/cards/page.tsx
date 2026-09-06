@@ -37,7 +37,10 @@ export default function CardsPage() {
       fd.append("file", file)
       fd.append("occasionType", activeOccasion)
       const res = await fetch("/api/cards/upload", { method: "POST", body: fd })
-      if (!res.ok) throw new Error("Upload failed")
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        throw new Error(data.error || "Upload failed")
+      }
       return res.json()
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["cards"] }),
@@ -101,6 +104,9 @@ export default function CardsPage() {
         <p className="text-sm text-[var(--text-muted)]">
           {dragging ? "Drop to upload…" : "Drag images here to upload — or click Upload Cards above"}
         </p>
+        {uploadMutation.isError && (
+          <p className="text-xs text-red-400 mt-2">{(uploadMutation.error as Error).message}</p>
+        )}
       </div>
 
       {/* Cards grid */}

@@ -44,7 +44,7 @@ export async function GET(req: Request) {
 
       for (const fan of fans) {
         const contact = fan.contact as any
-        if (!contact || contact.status !== "active") continue
+        if (!contact || contact.status !== "active" || contact.unsubscribed) continue
 
         const tenantId = contact.tenantId
 

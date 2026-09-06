@@ -8,6 +8,7 @@ const isPublicRoute = createRouteMatcher([
   "/sign-up(.*)",
   "/onboarding(.*)",
   "/api/webhooks(.*)",
+  "/api/stripe/webhook",
   "/api/cron(.*)",
   "/api/unsubscribe(.*)",
   "/api/onboarding(.*)",
@@ -28,6 +29,11 @@ export default clerkMiddleware(async (auth, req) => {
   if (!isPublicRoute(req)) {
     await auth.protect()
   }
+
+  // Expose the pathname to server layouts (used by the billing gate in app/(app)/layout.tsx).
+  const requestHeaders = new Headers(req.headers)
+  requestHeaders.set("x-pathname", req.nextUrl.pathname)
+  return NextResponse.next({ request: { headers: requestHeaders } })
 })
 
 export const config = {

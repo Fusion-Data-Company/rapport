@@ -9,6 +9,7 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import Paige from "@/components/Paige"
+import { daysUntil } from "@/lib/billing-ui"
 
 const NAV = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
@@ -19,8 +20,18 @@ const NAV = [
   { href: "/settings",  icon: Settings,        label: "Settings" },
 ]
 
-export default function AppShell({ children }: { children: React.ReactNode }) {
+export default function AppShell({ children, plan, subscriptionStatus, trialEndsAt }: {
+  children: React.ReactNode
+  plan?: string
+  subscriptionStatus?: string
+  trialEndsAt?: string | null
+}) {
   const pathname = usePathname()
+  const daysLeft = daysUntil(trialEndsAt)
+  const planLabel =
+    subscriptionStatus === "active" ? `${plan === "pro" ? "Pro" : "Paid"} Plan`
+    : subscriptionStatus === "trialing" ? (daysLeft !== null ? `Trial · ${daysLeft}d left` : "Free Trial")
+    : "No active plan"
 
   return (
     <div className="flex h-screen overflow-hidden" style={{ background: "var(--surface-base)" }}>
@@ -61,7 +72,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           }} />
           <div className="min-w-0">
             <p className="text-xs font-semibold text-[var(--text-primary)] truncate">My Account</p>
-            <p className="text-[10px] text-[var(--text-muted)]">Starter Plan</p>
+            <Link href="/settings/billing" className="text-[10px] text-[var(--text-muted)] hover:text-[var(--teal)]">{planLabel}</Link>
           </div>
         </div>
       </aside>

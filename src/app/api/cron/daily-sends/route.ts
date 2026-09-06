@@ -3,6 +3,7 @@ import { db, contacts, contactChildren, scheduledSends, cardTemplates, tenants, 
 import { eq, and, sql } from "drizzle-orm"
 import { generateEmailContent, type LLMConfig } from "@/lib/llm"
 import { Resend } from "resend"
+import { unsubscribeUrl } from "@/lib/unsubscribe"
 
 export const runtime = "nodejs"
 export const maxDuration = 300
@@ -28,6 +29,7 @@ export async function GET(req: Request) {
     const birthdayContacts = await db.query.contacts.findMany({
       where: and(
         eq(contacts.status, "active"),
+        eq(contacts.unsubscribed, false),
         sql`TO_CHAR(${contacts.birthdate}::date, 'MM-DD') = ${mmdd}`
       ),
       with: { children: true, sportsTeams: true },
@@ -37,6 +39,7 @@ export async function GET(req: Request) {
     const anniversaryContacts = await db.query.contacts.findMany({
       where: and(
         eq(contacts.status, "active"),
+        eq(contacts.unsubscribed, false),
         sql`TO_CHAR(${contacts.anniversary}::date, 'MM-DD') = ${mmdd}`
       ),
     })
@@ -106,15 +109,17 @@ export async function GET(req: Request) {
         // Send email
         const emailCfg = await db.query.tenantEmailConfig.findFirst({ where: eq(tenantEmailConfig.tenantId, tenant.id) })
         const toEmail = contactData.email
-        if (!toEmail) { processed++; continue }
+        if (!toEmail || contactData.unsubscribed) { processed++; continue }
 
+        const unsubUrl = unsubscribeUrl(contactData.id)
         await sendEmail({
           apiKey: emailCfg?.apiKeyEncrypted ?? process.env.RESEND_API_KEY!,
           provider: emailCfg?.provider ?? "resend",
           from: `${tenant.fromName} <${tenant.fromEmail}>`,
           to: toEmail,
           subject,
-          html: buildEmailHtml({ body, cardUrl: card?.imageUrl, businessName: tenant.businessName, fromName: tenant.fromName }),
+          html: buildEmailHtml({ body, cardUrl: card?.imageUrl, businessName: tenant.businessName, fromName: tenant.fromName, unsubscribeUrl: unsubUrl }),
+          unsubscribeUrl: unsubUrl,
         })
 
         // Log
@@ -143,17 +148,23 @@ export async function GET(req: Request) {
         const contact = await db.query.contacts.findFirst({ where: eq(contacts.id, send.contactId) })
         const tenant = await db.query.tenants.findFirst({ where: eq(tenants.id, send.tenantId) })
         if (!contact?.email || !tenant) continue
+        if (contact.unsubscribed || contact.status !== "active") {
+          await db.update(scheduledSends).set({ status: "skipped", errorMessage: "Contact unsubscribed" }).where(eq(scheduledSends.id, send.id))
+          continue
+        }
 
         const emailCfg = await db.query.tenantEmailConfig.findFirst({ where: eq(tenantEmailConfig.tenantId, send.tenantId) })
         const card = await db.query.cardTemplates.findFirst({ where: and(eq(cardTemplates.occasionType, send.occasionType), eq(cardTemplates.isActive, true)) })
 
+        const unsubUrl = unsubscribeUrl(contact.id)
         await sendEmail({
           apiKey: emailCfg?.apiKeyEncrypted ?? process.env.RESEND_API_KEY!,
           provider: emailCfg?.provider ?? "resend",
           from: `${tenant.fromName} <${tenant.fromEmail}>`,
           to: contact.email,
           subject: send.emailSubject ?? "Thinking of you!",
-          html: buildEmailHtml({ body: send.emailBodyText ?? "", cardUrl: card?.imageUrl, businessName: tenant.businessName, fromName: tenant.fromName }),
+          html: buildEmailHtml({ body: send.emailBodyText ?? "", cardUrl: card?.imageUrl, businessName: tenant.businessName, fromName: tenant.fromName, unsubscribeUrl: unsubUrl }),
+          unsubscribeUrl: unsubUrl,
         })
 
         await db.update(scheduledSends).set({ status: "sent", sentAt: new Date() }).where(eq(scheduledSends.id, send.id))
@@ -172,18 +183,24 @@ export async function GET(req: Request) {
   }
 }
 
-async function sendEmail({ apiKey, provider, from, to, subject, html }: {
-  apiKey: string; provider: string; from: string; to: string; subject: string; html: string
+async function sendEmail({ apiKey, provider, from, to, subject, html, unsubscribeUrl }: {
+  apiKey: string; provider: string; from: string; to: string; subject: string; html: string; unsubscribeUrl: string
 }) {
-  if (provider === "resend" || provider === "resend") {
+  if (provider === "resend") {
     const resend = new Resend(apiKey)
-    await resend.emails.send({ from, to, subject, html })
+    await resend.emails.send({
+      from, to, subject, html,
+      headers: {
+        "List-Unsubscribe": `<${unsubscribeUrl}>`,
+        "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+      },
+    })
   }
   // TODO: sendgrid, gmail providers
 }
 
-function buildEmailHtml({ body, cardUrl, businessName, fromName }: {
-  body: string; cardUrl?: string | null; businessName: string; fromName: string
+function buildEmailHtml({ body, cardUrl, businessName, fromName, unsubscribeUrl }: {
+  body: string; cardUrl?: string | null; businessName: string; fromName: string; unsubscribeUrl: string
 }) {
   return `<!DOCTYPE html>
 <html>
@@ -207,7 +224,7 @@ function buildEmailHtml({ body, cardUrl, businessName, fromName }: {
         <tr><td style="padding:16px 32px;border-top:1px solid rgba(43,168,162,0.1);">
           <p style="margin:0;color:rgba(148,163,184,0.5);font-size:11px;">
             You received this because you're valued by ${businessName}.
-            <a href="{{{unsubscribe_url}}}" style="color:rgba(148,163,184,0.5);">Unsubscribe</a>
+            <a href="${unsubscribeUrl}" style="color:rgba(148,163,184,0.5);">Unsubscribe</a>
           </p>
         </td></tr>
       </table>

@@ -61,33 +61,30 @@ export default function HomePage() {
       </section>
 
       {/* Pricing */}
-      <section style={{ padding: "60px 40px", maxWidth: 900, margin: "0 auto", textAlign: "center" }}>
+      <section style={{ padding: "60px 40px", maxWidth: 560, margin: "0 auto", textAlign: "center" }}>
         <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 36, fontWeight: 800, color: "white", marginBottom: 12 }}>Simple pricing</h2>
-        <p style={{ color: "rgba(148,163,184,0.8)", marginBottom: 40 }}>One flat monthly fee. Unlimited email sends.</p>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
-          {[
-            { plan: "Starter", price: "$49", contacts: "100", features: ["Email sends", "System cards", "Sports monitoring", "1 user"] },
-            { plan: "Growth", price: "$99", contacts: "500", features: ["Email + SMS", "Custom cards", "All sports", "3 users", "API access"], featured: true },
-            { plan: "Enterprise", price: "$199", contacts: "Unlimited", features: ["All features", "Unlimited users", "White-label", "Priority support"] },
-          ].map(({ plan, price, contacts, features, featured }) => (
-            <div key={plan} style={{ background: featured ? "rgba(43,168,162,0.1)" : "rgba(15,28,48,0.88)", border: `1px solid ${featured ? "rgba(43,168,162,0.4)" : "rgba(43,168,162,0.12)"}`, borderRadius: 20, padding: 28, position: "relative" }}>
-              {featured && <div style={{ position: "absolute", top: -12, left: "50%", transform: "translateX(-50%)", background: "linear-gradient(135deg,#2BA8A2,#1E8C86)", padding: "3px 14px", borderRadius: 999, fontSize: 11, fontWeight: 700, color: "white" }}>MOST POPULAR</div>}
-              <p style={{ fontSize: 14, fontWeight: 600, color: "#3CC4BD", marginBottom: 4 }}>{plan}</p>
-              <p style={{ fontSize: 36, fontWeight: 800, color: "white", marginBottom: 2 }}>{price}<span style={{ fontSize: 14, color: "rgba(148,163,184,0.7)" }}>/mo</span></p>
-              <p style={{ fontSize: 12, color: "rgba(148,163,184,0.7)", marginBottom: 20 }}>{contacts} contacts</p>
-              <div style={{ textAlign: "left", marginBottom: 24 }}>
-                {features.map(f => (
-                  <div key={f} style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 8 }}>
-                    <CheckCircle size={14} color="#2BA8A2" />
-                    <span style={{ fontSize: 13, color: "rgba(148,163,184,0.9)" }}>{f}</span>
-                  </div>
-                ))}
+        <p style={{ color: "rgba(148,163,184,0.8)", marginBottom: 40 }}>One plan. Pay per seat. Try it free for 14 days — no card required.</p>
+        <div style={{ background: "rgba(43,168,162,0.1)", border: "1px solid rgba(43,168,162,0.4)", borderRadius: 20, padding: 32, textAlign: "left" }}>
+          <p style={{ fontSize: 14, fontWeight: 600, color: "#3CC4BD", marginBottom: 4 }}>Pro</p>
+          <p style={{ fontSize: 44, fontWeight: 800, color: "white", marginBottom: 2, lineHeight: 1.1 }}>$29<span style={{ fontSize: 14, color: "rgba(148,163,184,0.7)", fontWeight: 500 }}> per seat / month</span></p>
+          <p style={{ fontSize: 13, color: "rgba(148,163,184,0.7)", marginBottom: 20 }}>14-day free trial · up to 250 contacts per seat · cancel anytime</p>
+          <div style={{ marginBottom: 24 }}>
+            {[
+              "McKay 66 contact profiles with CSV import",
+              "AI-written birthday, anniversary and milestone emails",
+              "Greeting card gallery, including your own uploads",
+              "Sports score monitoring via ESPN",
+              "Bring your own email (Resend) and LLM API keys",
+            ].map(f => (
+              <div key={f} style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 8 }}>
+                <CheckCircle size={14} color="#2BA8A2" />
+                <span style={{ fontSize: 14, color: "rgba(148,163,184,0.9)" }}>{f}</span>
               </div>
-              <Link href="/sign-up" style={{ display: "block", padding: "10px 0", borderRadius: 999, background: featured ? "linear-gradient(135deg,#2BA8A2,#1E8C86)" : "transparent", border: featured ? "none" : "1px solid rgba(43,168,162,0.3)", color: featured ? "white" : "#3CC4BD", textDecoration: "none", fontSize: 14, fontWeight: 600, textAlign: "center" }}>
-                Get Started
-              </Link>
-            </div>
-          ))}
+            ))}
+          </div>
+          <Link href="/sign-up" style={{ display: "block", padding: "12px 0", borderRadius: 999, background: "linear-gradient(135deg,#2BA8A2,#1E8C86)", color: "white", textDecoration: "none", fontSize: 15, fontWeight: 700, textAlign: "center", boxShadow: "0 4px 20px rgba(43,168,162,0.3)" }}>
+            Sign up — start your free trial
+          </Link>
         </div>
       </section>
 

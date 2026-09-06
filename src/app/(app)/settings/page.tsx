@@ -4,6 +4,7 @@ import { GlassCard } from "@/components/ui/glass-card"
 import { Mail, Brain, Mic, User, CreditCard, Shield } from "lucide-react"
 
 const SETTINGS_CARDS = [
+  { href: "/settings/billing", icon: CreditCard, label: "Billing", description: "Plan, seats, invoices and payment method" },
   { href: "/settings/email", icon: Mail, label: "Email Provider", description: "Configure Resend, SendGrid, or Gmail for outbound emails" },
   { href: "/settings/ai", icon: Brain, label: "AI / LLM", description: "Set your OpenRouter, Anthropic, OpenAI, or Google API key and model" },
   { href: "/settings/agent", icon: Mic, label: "Paige (Voice Agent)", description: "Configure your onboarding and admin voice assistant" },

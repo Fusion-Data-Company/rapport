@@ -29,12 +29,13 @@ export async function GET() {
       limit: 50,
     })
 
-    return NextResponse.json(sends.map(s => ({
+    return NextResponse.json(sends.map(({ contact, ...s }) => ({
       ...s,
-      contactFirstName: (s as any).contact?.firstName,
-      contactLastName: (s as any).contact?.lastName,
+      contactFirstName: contact?.firstName ?? null,
+      contactLastName: contact?.lastName ?? null,
     })))
   } catch (e) {
+    console.error("Schedule query failed:", e)
     return NextResponse.json([])
   }
 }

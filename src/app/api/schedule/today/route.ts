@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { auth } from "@clerk/nextjs/server"
-import { db, scheduledSends, tenantUsers, contacts } from "@/lib/db"
+import { db, scheduledSends, tenantUsers } from "@/lib/db"
 import { eq, and } from "drizzle-orm"
 
 async function getTenantId(userId: string) {
@@ -23,12 +23,13 @@ export async function GET() {
       with: { contact: true },
     })
 
-    return NextResponse.json(sends.map(s => ({
+    return NextResponse.json(sends.map(({ contact, ...s }) => ({
       ...s,
-      contactFirstName: (s as any).contact?.firstName,
-      contactLastName: (s as any).contact?.lastName,
+      contactFirstName: contact?.firstName ?? null,
+      contactLastName: contact?.lastName ?? null,
     })))
   } catch (e) {
+    console.error("Schedule query failed:", e)
     return NextResponse.json([])
   }
 }

@@ -1,7 +1,7 @@
 import {
   pgTable, text, timestamp, boolean, integer, real, date, uuid, jsonb, index, uniqueIndex
 } from "drizzle-orm/pg-core"
-import { relations } from "drizzle-orm"
+import { relations, sql } from "drizzle-orm"
 
 // ── Tenants ──────────────────────────────────────────────────────────────────
 
@@ -17,6 +17,12 @@ export const tenants = pgTable("tenants", {
   plan: text("plan").notNull().default("starter"),
   timezone: text("timezone").notNull().default("America/Los_Angeles"),
   status: text("status").notNull().default("active"),
+  // Billing (Stripe)
+  stripeCustomerId: text("stripe_customer_id"),
+  stripeSubscriptionId: text("stripe_subscription_id"),
+  subscriptionStatus: text("subscription_status").notNull().default("trialing"),
+  seats: integer("seats").notNull().default(1),
+  trialEndsAt: timestamp("trial_ends_at", { withTimezone: true }).default(sql`now() + interval '14 days'`),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 }, (t) => ({
@@ -149,6 +155,7 @@ export const contacts = pgTable("contacts", {
   // Meta
   internalNotes: text("internal_notes"),
   status: text("status").notNull().default("active"),
+  unsubscribed: boolean("unsubscribed").notNull().default(false),
   tags: text("tags").array(),
   source: text("source").default("manual"),
   externalId: text("external_id"),
@@ -349,4 +356,10 @@ export const contactChildrenRelations = relations(contactChildren, ({ one }) => 
 
 export const contactSportsTeamsRelations = relations(contactSportsTeams, ({ one }) => ({
   contact: one(contacts, { fields: [contactSportsTeams.contactId], references: [contacts.id] }),
+}))
+
+export const scheduledSendsRelations = relations(scheduledSends, ({ one }) => ({
+  tenant: one(tenants, { fields: [scheduledSends.tenantId], references: [tenants.id] }),
+  contact: one(contacts, { fields: [scheduledSends.contactId], references: [contacts.id] }),
+  cardTemplate: one(cardTemplates, { fields: [scheduledSends.cardTemplateId], references: [cardTemplates.id] }),
 }))

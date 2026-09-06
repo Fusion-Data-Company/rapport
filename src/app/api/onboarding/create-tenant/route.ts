@@ -32,6 +32,9 @@ export async function POST(req: Request) {
       fromEmail,
       fromName,
       replyTo: replyTo || fromEmail,
+      subscriptionStatus: "trialing",
+      seats: 1,
+      trialEndsAt: new Date(Date.now() + 14 * 86400000),
     }).returning()
 
     await db.insert(tenantUsers).values({
