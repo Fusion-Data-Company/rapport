@@ -7,7 +7,7 @@ Rapport keeps a McKay-66 style profile on every contact a rep cares about, watch
 has time to write, and sends it from the rep's own mailbox. Sales reps, account managers, agents,
 loan officers, recruiters.
 
-Live: https://rapport.fusiondataco.com · $29 per seat per month · 14-day trial · 250 contacts per seat
+Demo: https://rapport-demo-ruby.vercel.app (fictional sample book, own database) · Buyers get their own instance, see `docs/PROVISION.md` · $29 per seat per month · 14-day trial · 250 contacts per seat
 
 ## How it works
 
