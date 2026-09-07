@@ -1,3 +1,4 @@
+import { DemoBar } from "@/components/demo/demo-bar"
 import type { Metadata } from "next"
 import { ClerkProvider } from "@clerk/nextjs"
 import { Providers } from "./providers"
@@ -23,6 +24,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </head>
         <body>
           <Providers>{children}</Providers>
+          <DemoBar />
         </body>
       </html>
     </ClerkProvider>

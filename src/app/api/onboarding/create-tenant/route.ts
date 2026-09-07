@@ -3,6 +3,7 @@ import { auth } from "@clerk/nextjs/server"
 import { db, tenants, tenantUsers } from "@/lib/db"
 import { eq } from "drizzle-orm"
 import { nanoid } from "nanoid"
+import { seedDemoBook } from "@/lib/demo-seed"
 
 export async function POST(req: Request) {
   try {
@@ -42,6 +43,9 @@ export async function POST(req: Request) {
       clerkUserId: userId,
       role: "owner",
     })
+
+    // Demo deployments start every new tenant with a fictional sample book.
+    await seedDemoBook(tenant.id).catch((e) => console.error("demo seed failed", e))
 
     return NextResponse.json({ tenantId: tenant.id }, { status: 201 })
   } catch (e) {
