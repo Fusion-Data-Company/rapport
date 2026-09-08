@@ -20,6 +20,7 @@ import { GlassInput } from "@/components/ui/glass-input"
 import ContactSlidePanel from "./ContactSlidePanel"
 import { cn, getInitials, formatDate } from "@/lib/utils"
 import type { ContactWithRelations } from "@/lib/types"
+import { TIERS, TIER_HINT, normalizeTier } from "@/lib/tier-labels"
 
 type Contact = ContactWithRelations
 
@@ -80,6 +81,27 @@ function buildColumns(onUpdate: (id: string, field: string, value: unknown) => v
           onClick={e => e.stopPropagation()}
           className="w-3.5 h-3.5 accent-[var(--teal)] cursor-pointer" />
       ),
+    },
+
+    // Tier - how often this person hears from you at all
+    {
+      id: "tier", accessorKey: "tier", size: 70,
+      header: "Tier",
+      cell: ({ row }) => {
+        const tier = normalizeTier(row.original.tier)
+        return (
+          <select
+            aria-label={`Tier for ${row.original.firstName}`}
+            value={tier}
+            title={TIER_HINT[tier]}
+            onClick={(e) => e.stopPropagation()}
+            onChange={(e) => { e.stopPropagation(); onUpdate(row.original.id, "tier", e.target.value) }}
+            className="bg-transparent border border-[var(--surface-border)] rounded-md px-1.5 py-0.5 text-xs font-bold text-white hover:border-[var(--teal)] cursor-pointer"
+          >
+            {TIERS.map((t) => <option key={t} value={t}>{t}</option>)}
+          </select>
+        )
+      },
     },
 
     // Score

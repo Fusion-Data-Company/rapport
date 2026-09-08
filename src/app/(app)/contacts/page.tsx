@@ -4,7 +4,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import ContactsTable from "@/components/contacts/ContactsTable"
 import { AddContactDialog } from "@/components/contacts/AddContactDialog"
 import { GlassCard } from "@/components/ui/glass-card"
-import { Users, Upload, Plus } from "lucide-react"
+import { Users } from "lucide-react"
+import type { PlanStatus } from "@/app/api/settings/plan/route"
 import type { ContactWithRelations } from "@/lib/types"
 
 async function fetchContacts() {
@@ -31,7 +32,9 @@ async function deleteContact(id: string) {
 export default function ContactsPage() {
   const qc = useQueryClient()
   const { data: contacts = [], isLoading } = useQuery<ContactWithRelations[]>({ queryKey: ["contacts"], queryFn: fetchContacts })
+
   const [adding, setAdding] = useState(false)
+  const plan = useQuery<PlanStatus>({ queryKey: ["plan"], queryFn: () => fetch("/api/settings/plan").then(r => r.json()) })
 
   const updateMutation = useMutation({
     mutationFn: ({ id, field, value }: { id: string; field: string; value: unknown }) =>
@@ -53,9 +56,19 @@ export default function ContactsPage() {
           <h1 className="text-lg font-bold text-white" style={{ fontFamily: "'Playfair Display', serif" }}>
             Contacts
           </h1>
-          <p className="text-xs text-[var(--text-muted)]">Relationship database</p>
+          <p className="text-xs text-[var(--text-muted)]">
+            {plan.data
+              ? `${plan.data.contacts.toLocaleString()} of ${plan.data.allowance.toLocaleString()} on ${plan.data.plan.label}`
+              : "Relationship database"}
+          </p>
         </div>
       </div>
+
+      {plan.data?.notice && (
+        <div className={`px-6 py-2.5 text-sm border-b border-[var(--surface-border)] shrink-0 ${plan.data.over ? "text-[var(--gold)] bg-[rgba(255,210,63,0.06)]" : "text-[var(--text-muted)]"}`}>
+          {plan.data.notice}
+        </div>
+      )}
 
       {/* Table fills remaining height */}
       <div className="flex-1 overflow-hidden">
@@ -68,7 +81,7 @@ export default function ContactsPage() {
           onImport={() => window.location.href = "/contacts/import"}
         />
       </div>
-      <AddContactDialog open={adding} onClose={() => setAdding(false)} onCreated={() => qc.invalidateQueries({ queryKey: ["contacts"] })} />
+      <AddContactDialog open={adding} onClose={() => setAdding(false)} onCreated={() => { qc.invalidateQueries({ queryKey: ["contacts"] }); qc.invalidateQueries({ queryKey: ["plan"] }) }} />
     </div>
   )
 }

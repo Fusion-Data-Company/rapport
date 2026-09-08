@@ -4,7 +4,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { GlassCard } from "@/components/ui/glass-card"
 import { GlassButton } from "@/components/ui/glass-button"
 import { GlassInput } from "@/components/ui/glass-input"
-import { CalendarClock, Loader2, ShieldCheck } from "lucide-react"
+import { CalendarClock, Loader2, ShieldCheck, Layers } from "lucide-react"
+import { TIERS, TIER_HINT, TIER_LABEL, type Tier } from "@/lib/tier-labels"
 import type { CadenceSettings } from "@/app/api/settings/cadence/route"
 
 const LEAD_PRESETS = [0, 14, 30, 45, 60]
@@ -13,16 +14,22 @@ export default function CadenceSettingsPage() {
   const qc = useQueryClient()
   const q = useQuery<CadenceSettings>({ queryKey: ["cadence"], queryFn: () => fetch("/api/settings/cadence").then(r => r.json()) })
   const [milestoneDraft, setMilestoneDraft] = useState<string | null>(null)
+  const [tierDraft, setTierDraft] = useState<Partial<Record<Tier, string>>>({})
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null)
 
   const save = useMutation({
-    mutationFn: async (body: Partial<Pick<CadenceSettings, "renewalLeadDays" | "milestoneMonths" | "alwaysReview">>) => {
+    mutationFn: async (body: {
+      renewalLeadDays?: number
+      milestoneMonths?: number[]
+      alwaysReview?: boolean
+      tierDays?: Partial<Record<Tier, number>>
+    }) => {
       const r = await fetch("/api/settings/cadence", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
       const d = await r.json()
       if (!r.ok) throw new Error(d.error ?? "Could not save")
       return d
     },
-    onSuccess: () => { setMsg({ ok: true, text: "Saved." }); setMilestoneDraft(null); qc.invalidateQueries({ queryKey: ["cadence"] }) },
+    onSuccess: () => { setMsg({ ok: true, text: "Saved." }); setMilestoneDraft(null); setTierDraft({}); qc.invalidateQueries({ queryKey: ["cadence"] }) },
     onError: (e: Error) => setMsg({ ok: false, text: e.message }),
   })
 
@@ -98,6 +105,57 @@ export default function CadenceSettingsPage() {
                 >{d === 0 ? "On the day" : `${d} days before`}</button>
               ))}
             </div>
+          </GlassCard>
+
+          <GlassCard className="p-6 mb-5">
+            <p className="text-sm font-semibold text-white flex items-center gap-2">
+              <Layers className="w-4 h-4 text-[var(--teal)]" /> Tier cadence
+            </p>
+            <p className="text-sm text-[var(--text-muted)] mb-4">
+              The fewest days between notes to one person, by their tier. Set a contact&rsquo;s tier
+              on their profile. Zero means no gap at all.
+            </p>
+            <div className="space-y-3">
+              {TIERS.map((t: Tier) => (
+                <div key={t} className="flex items-start gap-3">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-white">{TIER_LABEL[t]}</p>
+                    <p className="text-xs text-[var(--text-muted)]">{TIER_HINT[t]}</p>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <GlassInput
+                      aria-label={`Minimum days between notes for tier ${t}`}
+                      type="number"
+                      min={0}
+                      max={365}
+                      className="w-20"
+                      value={tierDraft[t] ?? String(s?.tierDays?.[t] ?? "")}
+                      onChange={(e) => setTierDraft({ ...tierDraft, [t]: e.target.value })}
+                    />
+                    <span className="text-xs text-[var(--text-muted)]">days</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <GlassButton
+              size="sm"
+              className="mt-4"
+              loading={save.isPending}
+              disabled={Object.keys(tierDraft).length === 0}
+              onClick={() => {
+                const out: Partial<Record<Tier, number>> = {}
+                for (const t of TIERS) {
+                  const v = tierDraft[t]
+                  if (v === undefined) continue
+                  const n = Number(v)
+                  if (!Number.isInteger(n) || n < 0 || n > 365) { setMsg({ ok: false, text: "Days must be a whole number between 0 and 365." }); return }
+                  out[t] = n
+                }
+                setMsg(null)
+                setTierDraft({})
+                save.mutate({ tierDays: out })
+              }}
+            >Save tier cadence</GlassButton>
           </GlassCard>
 
           <GlassCard className="p-6">

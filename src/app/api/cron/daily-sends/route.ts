@@ -10,6 +10,7 @@ import { capState } from "@/lib/send-caps"
 import { addDays, addMonths, todayISO, type ISODate } from "@/lib/dates"
 import { milestoneMonthsFor, occasionsForDay, renewalLeadDaysFor, type ContactForOccasions, type DueOccasion } from "@/lib/occasions"
 import { formatHistory, recentTimeline } from "@/lib/timeline"
+import { lastSentByContact, withinTierGap } from "@/lib/tiers"
 
 export const runtime = "nodejs"
 export const maxDuration = 300
@@ -83,8 +84,14 @@ export async function GET(req: Request) {
       const llm = await loadLlmConfig(tenant.id)
 
       const book = await candidatesFor(tenant, today)
+      // Tier cadence: A hears about everything, C hears from you a few times a year.
+      const lastSent = await lastSentByContact(tenant.id, book.map((c) => c.id))
       const due: { occasion: DueOccasion; contact: ContactForOccasions }[] = []
       for (const contact of book) {
+        if (withinTierGap({ tier: contact.tier, lastSent: lastSent.get(contact.id), on: today, settings: tenant })) {
+          skipped++
+          continue
+        }
         for (const occasion of occasionsForDay(contact, tenant, today)) due.push({ occasion, contact })
       }
 

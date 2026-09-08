@@ -43,6 +43,7 @@ const FIELD_MAP: Record<string, string> = {
   "home purchase date": "homePurchaseDate", "purchase date": "homePurchaseDate",
   "home anniversary": "homePurchaseDate", "closed on home": "homePurchaseDate",
   "custom date": "customDate", "custom date label": "customDateLabel",
+  "tier": "tier", "priority": "tier", "rating": "tier",
 }
 
 /** Every column the importer understands, for the mapping step and the docs. */
@@ -50,6 +51,7 @@ export const IMPORT_FIELDS: { key: string; label: string }[] = [
   { key: "firstName", label: "First name" },
   { key: "lastName", label: "Last name" },
   { key: "nickname", label: "Nickname" },
+  { key: "tier", label: "Tier (A, B or C)" },
   { key: "email", label: "Email" },
   { key: "phone", label: "Phone" },
   { key: "companyName", label: "Company" },

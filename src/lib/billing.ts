@@ -13,8 +13,7 @@ export function stripe(): Stripe {
   return _stripe
 }
 
-export const PRICE_PER_SEAT_USD = 29
-export const CONTACTS_PER_SEAT = 250
+export const PRICE_PER_SEAT_USD = 39
 export const TRIAL_DAYS = 14
 export const MAX_SEATS = 100
 

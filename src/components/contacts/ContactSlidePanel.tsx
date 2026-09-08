@@ -9,6 +9,7 @@ import { GlassInput } from "@/components/ui/glass-input"
 import { cn, formatDate, getInitials } from "@/lib/utils"
 import type { ContactDateRow, ContactTimelineRow, ContactWithRelations } from "@/lib/types"
 import { KIND_LABEL, TIMELINE_KINDS, type TimelineKind } from "@/lib/timeline-kinds"
+import { TIERS, TIER_HINT, TIER_LABEL, normalizeTier, type Tier } from "@/lib/tier-labels"
 
 type Contact = ContactWithRelations
 
@@ -372,6 +373,30 @@ export default function ContactSlidePanel({ contact, onClose, onUpdate }: Props)
       <div className="flex-1 overflow-y-auto p-5">
         {activeSection === "overview" && (
           <>
+            <Section title="Tier" icon={Star}>
+              <p className="text-xs text-[var(--text-muted)] -mt-1">How often this person hears from you at all.</p>
+              <div className="flex gap-2">
+                {TIERS.map((t: Tier) => {
+                  const active = normalizeTier(contact.tier) === t
+                  return (
+                    <button
+                      key={t}
+                      type="button"
+                      title={TIER_HINT[t]}
+                      onClick={() => onUpdate(contact.id, "tier", t)}
+                      className={cn(
+                        "flex-1 py-2 rounded-xl border text-sm font-bold transition-colors",
+                        active
+                          ? "border-[var(--teal)] bg-[rgba(43,168,162,0.12)] text-[var(--teal-light)]"
+                          : "border-[var(--surface-border)] text-[var(--text-muted)] hover:text-white"
+                      )}
+                    >{t}</button>
+                  )
+                })}
+              </div>
+              <p className="text-[11px] text-[var(--text-muted)]">{TIER_LABEL[normalizeTier(contact.tier)]} - {TIER_HINT[normalizeTier(contact.tier)]}</p>
+            </Section>
+
             <Section title="Contact Info" icon={Globe}>
               <Field label="Email" value={contact.email} field="email" contactId={contact.id} onUpdate={onUpdate} />
               <Field label="Phone" value={contact.phone} field="phone" contactId={contact.id} onUpdate={onUpdate} />

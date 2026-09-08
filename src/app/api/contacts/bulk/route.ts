@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { db, contactDates, contacts } from "@/lib/db"
 import { requireAccess } from "@/lib/tenant"
-import { seatCapError } from "@/lib/contact-input"
+import { allowanceFor, normalizeTier } from "@/lib/tiers"
 import { ensureSchema } from "@/lib/db/ensure"
 import { parseDateInput } from "@/lib/dates"
 
@@ -23,8 +23,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "No contacts" }, { status: 400 })
     }
     if (rows.length > MAX_ROWS) return NextResponse.json({ error: `Import at most ${MAX_ROWS} rows at a time.` }, { status: 400 })
-    const cap = await seatCapError(tenantId, gate.tenant.seats, rows.length)
-    if (cap) return NextResponse.json({ error: cap }, { status: 402 })
 
     const source = rows as Record<string, string>[]
     const toInsert = source.map((r) => {
@@ -70,6 +68,7 @@ export async function POST(req: Request) {
         twitterUrl: text(r.twitterUrl, 300),
         tiktokUrl: text(r.tiktokUrl, 300),
         websiteUrl: text(r.websiteUrl, 300),
+        tier: normalizeTier(r.tier),
         source: "csv_import" as const,
       }
     })
@@ -86,7 +85,9 @@ export async function POST(req: Request) {
     })
     if (extraDates.length > 0) await db.insert(contactDates).values(extraDates)
 
-    return NextResponse.json({ inserted: inserted.length, customDates: extraDates.length })
+    // Soft limit: the import always lands, and the notice tells the agent where they are.
+    const allowance = await allowanceFor(gate.tenant)
+    return NextResponse.json({ inserted: inserted.length, customDates: extraDates.length, planNotice: allowance.notice })
   } catch (e) {
     console.error(e)
     return NextResponse.json({ error: "Server error" }, { status: 500 })

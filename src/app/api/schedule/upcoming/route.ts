@@ -5,6 +5,7 @@ import { requireAccess } from "@/lib/tenant"
 import { ensureSchema } from "@/lib/db/ensure"
 import { todayISO, addDays } from "@/lib/dates"
 import { occasionsForDay, type ContactForOccasions } from "@/lib/occasions"
+import { lastSentByContact, withinTierGap } from "@/lib/tiers"
 
 export const runtime = "nodejs"
 
@@ -80,10 +81,14 @@ export async function GET() {
   })) as ContactForOccasions[]
 
   const byId = new Map(book.map((c) => [c.id, c]))
+  // The projection obeys the same tier cadence the cron does, so what the agent sees
+  // here is what will actually go out.
+  const lastSent = await lastSentByContact(gate.tenant.id, book.map((c) => c.id))
   const projected: ScheduleItem[] = []
   for (let i = 0; i < WINDOW_DAYS; i++) {
     const day = addDays(today, i)
     for (const contact of book) {
+      if (withinTierGap({ tier: contact.tier, lastSent: lastSent.get(contact.id), on: day, settings: gate.tenant })) continue
       for (const occasion of occasionsForDay(contact, gate.tenant, day)) {
         const key = `${occasion.contactId}|${occasion.type}|${occasion.sendDate}`
         if (taken.has(key)) continue

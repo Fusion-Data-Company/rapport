@@ -2,7 +2,9 @@ import { NextResponse } from "next/server"
 import { db, contacts } from "@/lib/db"
 import { eq } from "drizzle-orm"
 import { requireAccess } from "@/lib/tenant"
-import { ContactInput, seatCapError } from "@/lib/contact-input"
+import { ContactInput } from "@/lib/contact-input"
+import { allowanceFor } from "@/lib/tiers"
+import { ensureSchema } from "@/lib/db/ensure"
 
 export async function GET() {
   const gate = await requireAccess()
@@ -26,10 +28,12 @@ export async function POST(req: Request) {
   try {
     const parsed = ContactInput.safeParse(await req.json().catch(() => null))
     if (!parsed.success) return NextResponse.json({ error: "First name is required; dates are YYYY-MM-DD; email must be an email." }, { status: 400 })
-    const cap = await seatCapError(gate.tenant.id, gate.tenant.seats, 1)
-    if (cap) return NextResponse.json({ error: cap }, { status: 402 })
+    await ensureSchema()
     const [contact] = await db.insert(contacts).values({ ...parsed.data, tenantId: gate.tenant.id, source: "manual" }).returning()
-    return NextResponse.json(contact, { status: 201 })
+    // The plan allowance is a soft limit: the contact is saved either way, and the
+    // notice rides along so the UI can say where the book now stands.
+    const allowance = await allowanceFor(gate.tenant)
+    return NextResponse.json({ ...contact, planNotice: allowance.notice }, { status: 201 })
   } catch (e) {
     console.error(e)
     return NextResponse.json({ error: "Server error" }, { status: 500 })

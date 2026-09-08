@@ -25,6 +25,11 @@ export const tenants = pgTable("tenants", {
   milestoneMonths: integer("milestone_months").array(),
   // On by default: nothing leaves the building until the agent has read it.
   alwaysReview: boolean("always_review").notNull().default(true),
+  // Minimum days between notes, by contact tier. A is the inner circle and hears
+  // about everything; C is the long tail and hears from you a few times a year.
+  tierAMinDays: integer("tier_a_min_days").notNull().default(0),
+  tierBMinDays: integer("tier_b_min_days").notNull().default(21),
+  tierCMinDays: integer("tier_c_min_days").notNull().default(75),
   status: text("status").notNull().default("active"),
   // Billing (Stripe)
   stripeCustomerId: text("stripe_customer_id"),
@@ -171,6 +176,8 @@ export const contacts = pgTable("contacts", {
   geocodedAddress: text("geocoded_address"),
 
   // Meta
+  /** "A" inner circle, "B" the working book, "C" the long tail. Drives cadence. */
+  tier: text("tier").notNull().default("B"),
   internalNotes: text("internal_notes"),
   status: text("status").notNull().default("active"),
   unsubscribed: boolean("unsubscribed").notNull().default(false),

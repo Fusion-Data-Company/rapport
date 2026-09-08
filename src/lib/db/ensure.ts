@@ -85,6 +85,16 @@ async function run() {
   `)
   await db.execute(sql`create index if not exists contact_timeline_contact_idx on contact_timeline (contact_id, occurred_at)`)
   await db.execute(sql`create index if not exists contact_timeline_tenant_idx on contact_timeline (tenant_id)`)
+
+  // 0006 - contact tiers and their cadence
+  await db.execute(sql`alter table contacts add column if not exists tier text not null default 'B'`)
+  await db.execute(sql`create index if not exists contacts_tenant_tier_idx on contacts (tenant_id, tier)`)
+  await db.execute(sql`
+    alter table tenants
+      add column if not exists tier_a_min_days integer not null default 0,
+      add column if not exists tier_b_min_days integer not null default 21,
+      add column if not exists tier_c_min_days integer not null default 75
+  `)
 }
 
 /** Runs the top-up once per process. Safe to await from any request path. */

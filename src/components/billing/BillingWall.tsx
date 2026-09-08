@@ -6,8 +6,8 @@ import { GlassCard } from "@/components/ui/glass-card"
 import { GlassButton } from "@/components/ui/glass-button"
 import { isPast } from "@/lib/billing-ui"
 
-const PRICE = 29
-const CONTACTS_PER_SEAT = 250
+const PRICE = 39
+const CONTACTS_PER_SEAT = 1000
 const MAX_SEATS = 100
 
 export default function BillingWall({ seats: initialSeats, subscriptionStatus, trialEndsAt }: {
@@ -52,22 +52,23 @@ export default function BillingWall({ seats: initialSeats, subscriptionStatus, t
           </div>
           <div>
             <h1 className="text-h1 text-white" style={{ fontFamily: "'Playfair Display', serif" }}>{headline}</h1>
-            <p className="text-sm text-[var(--text-muted)]">Subscribe to keep sending personalized milestone emails.</p>
+            <p className="text-sm text-[var(--text-muted)]">Subscribe to keep the notes going out.</p>
           </div>
         </div>
 
         <GlassCard className="p-6 space-y-6">
           <div>
-            <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] mb-1">Pro</p>
+            <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] mb-1">Rapport</p>
             <p className="text-3xl font-extrabold text-white">
               ${PRICE}<span className="text-sm font-medium text-[var(--text-muted)]"> per seat / month</span>
             </p>
             <div className="mt-3 space-y-1.5">
               {[
-                `Up to ${CONTACTS_PER_SEAT} contacts per seat`,
-                "AI-personalized birthday, anniversary and milestone emails",
-                "Sports score monitoring via ESPN",
-                "Cancel anytime from the billing portal",
+                `${CONTACTS_PER_SEAT.toLocaleString()} contacts a seat, as a soft limit: never a blocked import`,
+                "Birthday, renewal, closing anniversary and months-since-close notes",
+                "Sent from your own Gmail or Microsoft 365 mailbox",
+                "Every note held for your approval before it goes out",
+                "Cancel any time from the billing portal",
               ].map(f => (
                 <div key={f} className="flex items-center gap-2 text-sm text-[var(--text-primary)]">
                   <CheckCircle className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" /> {f}
@@ -91,7 +92,7 @@ export default function BillingWall({ seats: initialSeats, subscriptionStatus, t
                 <Plus className="w-4 h-4" />
               </button>
               <p className="text-sm text-[var(--text-muted)] ml-2">
-                {seats} seat{seats === 1 ? "" : "s"} · up to {(seats * CONTACTS_PER_SEAT).toLocaleString()} contacts
+                {seats} seat{seats === 1 ? "" : "s"} · {(seats * CONTACTS_PER_SEAT).toLocaleString()} contacts covered
               </p>
             </div>
           </div>

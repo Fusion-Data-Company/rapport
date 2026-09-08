@@ -2,7 +2,8 @@ import Link from "next/link"
 import { redirect } from "next/navigation"
 import { CreditCard } from "lucide-react"
 import { getCurrentTenant } from "@/lib/tenant"
-import { hasAccess, PRICE_PER_SEAT_USD, CONTACTS_PER_SEAT } from "@/lib/billing"
+import { hasAccess, PRICE_PER_SEAT_USD } from "@/lib/billing"
+import { allowanceFor } from "@/lib/tiers"
 import { daysUntil } from "@/lib/billing-ui"
 import { GlassCard } from "@/components/ui/glass-card"
 import ManageBillingButton from "@/components/billing/ManageBillingButton"
@@ -27,6 +28,7 @@ export default async function BillingSettingsPage({ searchParams }: { searchPara
   const subscribed = !!tenant.stripeSubscriptionId && status === "active"
   const trialActive = status === "trialing" && hasAccess(tenant)
   const daysLeft = daysUntil(tenant.trialEndsAt)
+  const allowance = await allowanceFor(tenant)
 
   return (
     <div className="p-6 max-w-2xl mx-auto">
@@ -48,25 +50,34 @@ export default async function BillingSettingsPage({ searchParams }: { searchPara
         <div className="grid grid-cols-3 gap-4">
           <div>
             <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">Plan</p>
-            <p className="text-lg font-semibold text-white">{subscribed ? "Pro" : trialActive ? "Trial" : "None"}</p>
+            <p className="text-lg font-semibold text-white">{subscribed ? allowance.plan.label : trialActive ? "Trial" : "None"}</p>
           </div>
           <div>
             <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">Status</p>
             <p className="text-lg font-semibold text-white">{STATUS_LABEL[status] ?? status}</p>
           </div>
           <div>
-            <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">Seats</p>
-            <p className="text-lg font-semibold text-white">{tenant.seats}</p>
+            <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">Contacts</p>
+            <p className="text-lg font-semibold text-white">
+              {allowance.contacts.toLocaleString()}
+              <span className="text-sm font-normal text-[var(--text-muted)]"> of {allowance.allowance.toLocaleString()}</span>
+            </p>
           </div>
         </div>
 
         <p className="text-sm text-[var(--text-muted)]">
           {subscribed
-            ? `${tenant.seats} seat${tenant.seats === 1 ? "" : "s"} × $${PRICE_PER_SEAT_USD}/month = $${(tenant.seats * PRICE_PER_SEAT_USD).toLocaleString()}/month · up to ${(tenant.seats * CONTACTS_PER_SEAT).toLocaleString()} contacts.`
+            ? `${allowance.plan.label}, $${(tenant.seats * PRICE_PER_SEAT_USD).toLocaleString()}/month. The ${allowance.allowance.toLocaleString()} contact figure is a soft limit: Rapport never blocks a contact or an import because of it.`
             : trialActive
               ? `Free trial${daysLeft !== null ? ` — ${daysLeft} day${daysLeft === 1 ? "" : "s"} left` : ""}. Subscribe any time to keep access after it ends.`
               : "No active subscription. Start one to keep using Rapport."}
         </p>
+
+        {allowance.notice && (
+          <div className={`rounded-xl border p-3 text-sm ${allowance.over ? "border-[var(--gold)] text-[var(--gold)]" : "border-[var(--surface-border)] text-[var(--text-muted)]"}`}>
+            {allowance.notice}
+          </div>
+        )}
 
         <div className="flex flex-wrap gap-3 border-t border-[var(--surface-border)] pt-5">
           {tenant.stripeCustomerId ? (
