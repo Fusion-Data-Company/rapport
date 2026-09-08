@@ -44,7 +44,11 @@ const SPECS: Record<OAuthProvider, ProviderSpec> = {
     scopes: ["https://www.googleapis.com/auth/gmail.send", "openid", "email"],
     clientId: () => process.env.GOOGLE_OAUTH_CLIENT_ID,
     clientSecret: () => process.env.GOOGLE_OAUTH_CLIENT_SECRET,
-    authorizeExtras: { access_type: "offline", prompt: "consent", include_granted_scopes: "true" },
+    // No include_granted_scopes. Incremental authorisation makes Google merge every
+    // scope this account has ever granted anywhere in the Cloud project into the
+    // request, and a project that also holds YouTube or Drive grants then fails with
+    // "scopes that cannot be requested together". Rapport wants exactly one scope.
+    authorizeExtras: { access_type: "offline", prompt: "consent" },
   },
   microsoft: {
     label: "Microsoft 365 / Outlook",
