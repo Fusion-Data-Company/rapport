@@ -1,5 +1,6 @@
 "use client"
-import { useQuery } from "@tanstack/react-query"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { GlassButton } from "@/components/ui/glass-button"
 import { GlassCard } from "@/components/ui/glass-card"
 import { Calendar, Mail } from "lucide-react"
 import { formatDate } from "@/lib/utils"
@@ -11,9 +12,15 @@ const OCCASION_COLORS: Record<string, string> = {
 }
 
 export default function SchedulePage() {
+  const qc = useQueryClient()
   const { data: upcoming = [] } = useQuery({
     queryKey: ["upcoming-all"],
     queryFn: () => fetch("/api/schedule/upcoming").then(r => r.json()),
+  })
+  const held = (upcoming as Array<{ status: string }>).filter((s) => s.status === "pending_approval")
+  const decide = useMutation({
+    mutationFn: (action: "approve" | "skip") => fetch("/api/schedule/approve", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ all: true, action }) }).then((r) => r.json()),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["upcoming-all"] }),
   })
 
   return (
@@ -23,6 +30,17 @@ export default function SchedulePage() {
         <h1 className="text-h1 text-white" style={{ fontFamily: "'Playfair Display', serif" }}>Send Schedule</h1>
         <span className="badge badge-gold ml-2">{upcoming.length} upcoming</span>
       </div>
+
+      {held.length > 0 && (
+        <GlassCard className="p-5 mb-4 border-[var(--gold)]">
+          <p className="font-semibold text-white">Your first {held.length === 1 ? "note is" : `${held.length} notes are`} written and waiting for you.</p>
+          <p className="text-sm text-[var(--text-muted)] mt-1">Rapport holds a new account&rsquo;s first day of sends until you have read them. Open each one below, then release the batch. Nothing goes out until you do.</p>
+          <div className="flex gap-3 mt-3">
+            <GlassButton onClick={() => decide.mutate("approve")} disabled={decide.isPending}>Send them on the next run</GlassButton>
+            <button type="button" className="text-sm text-[var(--text-muted)] underline" onClick={() => decide.mutate("skip")} disabled={decide.isPending}>Skip this batch</button>
+          </div>
+        </GlassCard>
+      )}
 
       {upcoming.length === 0 ? (
         <GlassCard className="p-12 flex flex-col items-center gap-3">
@@ -49,10 +67,10 @@ export default function SchedulePage() {
               </div>
               <div className="flex items-center gap-2">
                 <span className={`badge ${send.status === "sent" ? "badge-green" : send.status === "failed" ? "badge-coral" : "badge-gold"}`}>
-                  {send.status}
+                  {send.status === "pending_approval" ? "waiting for you" : send.status === "approved" ? "sends next run" : send.status}
                 </span>
                 {send.emailSubject && (
-                  <span className="text-xs text-[var(--text-muted)] truncate max-w-[200px]" title={send.emailSubject}>
+                  <span className="text-xs text-[var(--text-muted)] truncate max-w-[200px]" title={send.emailBodyText ? `${send.emailSubject}\n\n${send.emailBodyText}` : send.emailSubject}>
                     <Mail className="w-3 h-3 inline mr-1" />{send.emailSubject}
                   </span>
                 )}

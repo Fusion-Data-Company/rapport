@@ -1,6 +1,7 @@
 import Stripe from "stripe"
 import { db, tenants } from "@/lib/db"
 import { eq } from "drizzle-orm"
+import { notifyOperator } from "@/lib/notify-operator"
 
 let _stripe: Stripe | null = null
 export function stripe(): Stripe {
@@ -121,6 +122,23 @@ export async function handleStripeEvent(event: Stripe.Event): Promise<void> {
         ...(seats ? { seats } : {}),
         updatedAt: new Date(),
       }).where(eq(tenants.id, tenantId))
+
+      // Money landed: the operator hears about it now, not when they open Stripe.
+      const tenant = await db.query.tenants.findFirst({ where: eq(tenants.id, tenantId) })
+      void notifyOperator(
+        `Money landed: Rapport ${seats ?? 1} seat${(seats ?? 1) === 1 ? "" : "s"} ($${(seats ?? 1) * PRICE_PER_SEAT_USD}/mo) from ${session.customer_details?.email ?? "unknown"}`,
+        [
+          `Business: ${tenant?.businessName ?? tenantId}`,
+          `Buyer: ${session.customer_details?.name ?? ""} ${session.customer_details?.email ?? ""}`.trim(),
+          `Seats: ${seats ?? 1} x $${PRICE_PER_SEAT_USD}`,
+          `Status: ${status}`,
+          `Tenant: ${tenantId}`,
+          `Stripe customer: ${customerId}`,
+          `Stripe subscription: ${subscriptionId}`,
+          "",
+          "Nothing to do. Their first day of notes is held for their own one-click approval on the Schedule page.",
+        ].join("\n"),
+      ).catch(() => undefined)
       return
     }
 

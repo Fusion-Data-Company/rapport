@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server"
 import { db, contacts, contactSportsTeams, sportsEvents, sportsNotificationsSent, scheduledSends, tenants, tenantLlmConfig } from "@/lib/db"
 import { fetchCompletedGames } from "@/lib/sports/espn"
-import { eq, and, gte, sql } from "drizzle-orm"
+import { eq, and, gte, inArray } from "drizzle-orm"
 import { generateEmailContent, type LLMConfig } from "@/lib/llm"
+import { open } from "@/lib/crypto"
 
 export const runtime = "nodejs"
 export const maxDuration = 300
@@ -37,8 +38,9 @@ export async function GET(req: Request) {
 
       // Find contacts who follow either team
       const teams = [game.homeTeamId, game.awayTeamId].filter(Boolean)
+      if (teams.length === 0) continue
       const fans = await db.query.contactSportsTeams.findMany({
-        where: sql`${contactSportsTeams.teamId} = ANY(ARRAY[${teams.join(",")}])`,
+        where: inArray(contactSportsTeams.teamId, teams as string[]),
         with: { contact: { with: { tenant: true } } },
       })
 
@@ -69,7 +71,7 @@ export async function GET(req: Request) {
         const llmConfig: LLMConfig = {
           provider: llmCfg?.provider ?? "openrouter",
           model: llmCfg?.model ?? "google/gemma-4-26b-a4b-it",
-          apiKey: llmCfg?.apiKeyEncrypted ?? process.env.OPENROUTER_API_KEY,
+          apiKey: open(llmCfg?.apiKeyEncrypted) ?? process.env.OPENROUTER_API_KEY,
           temperature: llmCfg?.temperature ?? 0.7,
         }
 

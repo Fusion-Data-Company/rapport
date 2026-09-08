@@ -4,7 +4,7 @@ import Link from "next/link"
 import { UserButton } from "@clerk/nextjs"
 import { motion } from "framer-motion"
 import {
-  LayoutDashboard, Users, CreditCard, Activity,
+  LayoutDashboard, Users, CreditCard,
   Calendar, Settings, ChevronRight, Heart
 } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -15,7 +15,6 @@ const NAV = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
   { href: "/contacts",  icon: Users,           label: "Contacts" },
   { href: "/cards",     icon: CreditCard,      label: "Card Gallery" },
-  { href: "/sports",    icon: Activity,        label: "Sports Monitor" },
   { href: "/schedule",  icon: Calendar,        label: "Schedule" },
   { href: "/settings",  icon: Settings,        label: "Settings" },
 ]

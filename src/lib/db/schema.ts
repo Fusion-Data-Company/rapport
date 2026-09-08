@@ -16,6 +16,8 @@ export const tenants = pgTable("tenants", {
   logoUrl: text("logo_url"),
   plan: text("plan").notNull().default("starter"),
   timezone: text("timezone").notNull().default("America/Los_Angeles"),
+  // CAN-SPAM: the sender's physical mailing address, printed in every note's footer.
+  postalAddress: text("postal_address"),
   status: text("status").notNull().default("active"),
   // Billing (Stripe)
   stripeCustomerId: text("stripe_customer_id"),

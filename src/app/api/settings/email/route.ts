@@ -3,6 +3,7 @@ import { auth } from "@clerk/nextjs/server"
 import { db, tenants, tenantUsers, tenantEmailConfig } from "@/lib/db"
 import { eq } from "drizzle-orm"
 import { driverFromConfig, platformDriver, verifySmtp } from "@/lib/mailer"
+import { seal } from "@/lib/crypto"
 
 async function getTenantId(userId: string) {
   const u = await db.query.tenantUsers.findFirst({ where: eq(tenantUsers.clerkUserId, userId) })
@@ -43,13 +44,16 @@ export async function POST(req: Request) {
     if (!host || !username || !password || !Number.isInteger(port) || port < 1 || port > 65535) {
       return NextResponse.json({ error: "Host, port, username and password are all required." }, { status: 400 })
     }
+    if (host.length > 253 || !/^[a-z0-9.-]+$/i.test(host) || username.length > 320 || password.length > 512) {
+      return NextResponse.json({ error: "That does not look like a mail server." }, { status: 400 })
+    }
 
     const err = await verifySmtp({ host, port, user: username, pass: password })
     if (err) return NextResponse.json({ error: `Could not sign in to that mailbox: ${err}` }, { status: 400 })
 
     const values = {
       provider: "smtp", smtpHost: host, smtpPort: port, smtpUsername: username,
-      smtpPasswordEncrypted: password, apiKeyEncrypted: null, isVerified: true, updatedAt: new Date(),
+      smtpPasswordEncrypted: seal(password), apiKeyEncrypted: null, isVerified: true, updatedAt: new Date(),
     }
     const existing = await db.query.tenantEmailConfig.findFirst({ where: eq(tenantEmailConfig.tenantId, tenantId) })
     if (existing) await db.update(tenantEmailConfig).set(values).where(eq(tenantEmailConfig.tenantId, tenantId))

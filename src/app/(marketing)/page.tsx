@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { Heart, ArrowRight, CheckCircle, Mail, CalendarDays, Trophy, Upload, Sparkles, ShieldCheck } from "lucide-react"
+import { Heart, ArrowRight, CheckCircle, Mail, CalendarDays, Upload, Sparkles, ShieldCheck } from "lucide-react"
 
 const isDemo = process.env.NEXT_PUBLIC_DEMO_MODE === "true"
 
@@ -30,8 +30,8 @@ const css = `
 
 const TODAY = [
   { when: "Birthday · tomorrow", to: "Dana Whitfield, Whitfield Roofing", why: "\"Happy birthday, Dana. Hope Ella's soccer season is treating you better than the Chiefs' defense is.\" Sent from your mailbox at 7:00 am." },
-  { when: "Work anniversary · 5 years", to: "Luis Ortega, Ortega & Sons Plumbing", why: "Five years since Luis took over from his dad. Note references the expansion into El Paso he mentioned in March." },
-  { when: "Their team won last night", to: "Tom Becker, Becker Auto Body", why: "Packers 27–17. A two-line congrats from you lands before his first coffee." },
+  { when: "Anniversary · 12 years", to: "Luis Ortega, Ortega & Sons Plumbing", why: "Twelve years since Luis and Marisol married. The note remembers the restaurant he said they go back to every year." },
+  { when: "Kid's birthday · Saturday", to: "Tom Becker, Becker Auto Body", why: "Ava turns nine. A two-line note to Tom about the science fair he mentioned lands before his first coffee." },
 ]
 
 export default function HomePage() {
@@ -107,9 +107,9 @@ export default function HomePage() {
         <span className="kick">How it works</span>
         <h2>Three things, then it runs itself</h2>
         <div className="grid3" style={{ marginTop: 24 }}>
-          <div className="card step"><b>1</b><Upload size={20} color="#3CC4BD" /><h3 style={{ margin: "10px 0 6px", color: "#fff", fontSize: 17 }}>Load your book</h3><p className="sub" style={{ fontSize: 14 }}>CSV from any CRM, a photo of a business card, or type it in. Rapport keeps the human details — kids, spouse, hometown, their team, what you last talked about.</p></div>
+          <div className="card step"><b>1</b><Upload size={20} color="#3CC4BD" /><h3 style={{ margin: "10px 0 6px", color: "#fff", fontSize: 17 }}>Load your book</h3><p className="sub" style={{ fontSize: 14 }}>CSV from any CRM, or type it in. Rapport keeps the human details: kids, spouse, hometown, college, what you last talked about.</p></div>
           <div className="card step"><b>2</b><Mail size={20} color="#3CC4BD" /><h3 style={{ margin: "10px 0 6px", color: "#fff", fontSize: 17 }}>Connect your mailbox</h3><p className="sub" style={{ fontSize: 14 }}>Google Workspace, Microsoft 365 or any SMTP. Notes go out from <em>you</em>, not from a marketing platform, so they land in the inbox and read like you wrote them.</p></div>
-          <div className="card step"><b>3</b><CalendarDays size={20} color="#3CC4BD" /><h3 style={{ margin: "10px 0 6px", color: "#fff", fontSize: 17 }}>Approve or let it fly</h3><p className="sub" style={{ fontSize: 14 }}>Every morning Rapport finds the milestones due, writes each note from that person's profile, and sends it — or holds it for a one-tap approve if you want the last word.</p></div>
+          <div className="card step"><b>3</b><CalendarDays size={20} color="#3CC4BD" /><h3 style={{ margin: "10px 0 6px", color: "#fff", fontSize: 17 }}>Approve or let it fly</h3><p className="sub" style={{ fontSize: 14 }}>Every morning Rapport finds the milestones due, writes each note from that person&rsquo;s profile, and sends it from your mailbox. Your first day of notes is always held for a one-tap approve, so you see its voice before anyone else does.</p></div>
         </div>
       </section>
 
@@ -119,9 +119,9 @@ export default function HomePage() {
         <h2>The moments that move a relationship</h2>
         <div className="grid3" style={{ marginTop: 24 }}>
           {[
-            [CalendarDays, "Birthdays and anniversaries", "Theirs, their spouse's, their kids' — and the anniversary of the day they became your client."],
-            [Trophy, "Their team's results", "Seven leagues checked daily. A win gets a two-line congrats; a bad loss gets left alone."],
-            [Sparkles, "Written for one person", "Each note is drafted from that contact's profile and your voice settings. Never a merge field, never bulk."],
+            [CalendarDays, "Birthdays and anniversaries", "Theirs, their anniversary, and their kids' birthdays, each written to the parent."],
+            [Mail, "Sent as you", "From your own Google, Microsoft or SMTP mailbox, so it lands in the inbox and reads like you wrote it."],
+            [Sparkles, "Written for one person", "Each note is drafted from that contact's profile. Never a merge field, never bulk."],
           ].map(([Icon, t, d]) => {
             const I = Icon as typeof Mail
             return (
@@ -177,11 +177,11 @@ export default function HomePage() {
             <p style={{ fontSize: 44, fontWeight: 800, color: "#fff", margin: 0, lineHeight: 1.1 }}>$29<span style={{ fontSize: 14, color: "var(--dim)", fontWeight: 500 }}> / seat / month</span></p>
             <p style={{ fontSize: 13, color: "var(--dim)", margin: "6px 0 18px" }}>14-day free trial · 250 contacts per seat · cancel any time</p>
             {[
-              "Contact profiles with CSV and business-card import",
-              "Birthday, anniversary, milestone and team-result notes, written per person",
-              "Greeting-card gallery, including your own designs",
+              "Contact profiles with CSV import and CSV export",
+              "Birthday, anniversary and kids' birthday notes, written per person",
+              "Your own card images on every note, if you want them",
               "Sends from your own mailbox",
-              "Approval queue, send log, unsubscribe handling",
+              "First batch held for your approval, send log, unsubscribe handling",
               "Custom integrations for your CRM or tools on request",
             ].map((f) => (
               <div key={f} style={{ display: "flex", gap: 8, alignItems: "flex-start", marginBottom: 8 }}>
@@ -197,7 +197,7 @@ export default function HomePage() {
       <section className="sec wrap faq" style={{ paddingTop: 0 }}>
         <span className="kick">Questions</span>
         <div className="grid3" style={{ marginTop: 10 }}>
-          <div className="card"><h4>Will clients know it is automated?</h4><p>Only if you tell them. Notes are short, specific to that person, and sent from your own address. There is no footer, no tracking pixel, no "powered by".</p></div>
+          <div className="card"><h4>Will clients know it is automated?</h4><p>Only if you tell them. Notes are short, specific to that person, and sent from your own address. The footer is one quiet line with your mailing address and an unsubscribe link, which the law requires; no tracking pixel, no &ldquo;powered by&rdquo;.</p></div>
           <div className="card"><h4>Where does the personal information come from?</h4><p>From you. Rapport stores what you already know about your clients and never buys or scrapes data. Every contact can unsubscribe with one click.</p></div>
           <div className="card"><h4>Can it work with my CRM?</h4><p>CSV in and out today. Deeper integrations (HubSpot, Salesforce, GoHighLevel, your agency system) are wired in per customer — tell us what you use.</p></div>
         </div>
@@ -214,7 +214,7 @@ export default function HomePage() {
       </section>
 
       <footer style={{ borderTop: "1px solid rgba(43,168,162,.1)", padding: "24px 40px", textAlign: "center", color: "rgba(100,116,139,.8)", fontSize: 13 }}>
-        © {new Date().getFullYear()} Fusion Data Company · Rapport · rob@fusiondataco.com
+        © {new Date().getFullYear()} Fusion Data Company · Rapport · <a href="/terms" style={{ color: "inherit" }}>Terms</a> · <a href="/privacy" style={{ color: "inherit" }}>Privacy</a> · <a href="/refunds" style={{ color: "inherit" }}>Refunds</a> · rob@fusiondataco.com · (916) 507-4160 · 7908 Katella Way, Citrus Heights, CA 95621
       </footer>
     </div>
   )

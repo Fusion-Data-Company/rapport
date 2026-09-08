@@ -2,6 +2,7 @@
 import { useState } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import ContactsTable from "@/components/contacts/ContactsTable"
+import { AddContactDialog } from "@/components/contacts/AddContactDialog"
 import { GlassCard } from "@/components/ui/glass-card"
 import { Users, Upload, Plus } from "lucide-react"
 
@@ -29,6 +30,7 @@ async function deleteContact(id: string) {
 export default function ContactsPage() {
   const qc = useQueryClient()
   const { data: contacts = [], isLoading } = useQuery<any[]>({ queryKey: ["contacts"], queryFn: fetchContacts })
+  const [adding, setAdding] = useState(false)
 
   const updateMutation = useMutation({
     mutationFn: ({ id, field, value }: { id: string; field: string; value: unknown }) =>
@@ -61,10 +63,11 @@ export default function ContactsPage() {
           isLoading={isLoading}
           onUpdate={(id, field, value) => updateMutation.mutateAsync({ id, field, value })}
           onDelete={id => deleteMutation.mutateAsync(id)}
-          onAdd={() => {/* TODO: open add contact dialog */}}
+          onAdd={() => setAdding(true)}
           onImport={() => window.location.href = "/contacts/import"}
         />
       </div>
+      <AddContactDialog open={adding} onClose={() => setAdding(false)} onCreated={() => qc.invalidateQueries({ queryKey: ["contacts"] })} />
     </div>
   )
 }

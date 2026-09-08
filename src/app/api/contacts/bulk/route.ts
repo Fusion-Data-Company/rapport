@@ -1,25 +1,22 @@
 import { NextResponse } from "next/server"
-import { auth } from "@clerk/nextjs/server"
-import { db, contacts, tenantUsers } from "@/lib/db"
-import { eq } from "drizzle-orm"
+import { db, contacts } from "@/lib/db"
+import { requireAccess } from "@/lib/tenant"
+import { seatCapError } from "@/lib/contact-input"
 
-async function getTenantId(clerkUserId: string): Promise<string | null> {
-  const user = await db.query.tenantUsers.findFirst({ where: eq(tenantUsers.clerkUserId, clerkUserId) })
-  return user?.tenantId ?? null
-}
+const MAX_ROWS = 5000
 
 export async function POST(req: Request) {
+  const gate = await requireAccess()
+  if (!gate.ok) return NextResponse.json({ error: gate.error }, { status: gate.status })
+  const tenantId = gate.tenant.id
   try {
-    const { userId } = await auth()
-    if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-
-    const tenantId = await getTenantId(userId)
-    if (!tenantId) return NextResponse.json({ error: "No tenant" }, { status: 400 })
-
     const { contacts: rows } = await req.json()
     if (!Array.isArray(rows) || rows.length === 0) {
       return NextResponse.json({ error: "No contacts" }, { status: 400 })
     }
+    if (rows.length > MAX_ROWS) return NextResponse.json({ error: `Import at most ${MAX_ROWS} rows at a time.` }, { status: 400 })
+    const cap = await seatCapError(tenantId, gate.tenant.seats, rows.length)
+    if (cap) return NextResponse.json({ error: cap }, { status: 402 })
 
     const toInsert = rows.map((r: Record<string, string>) => {
       // Split "name" field into first/last if needed

@@ -58,3 +58,14 @@ own branch/env; the demo and live instances are not touched.
 
 Cancel the Stripe subscription → delete the Vercel project → delete the Neon project → remove the
 line from `rapport-buyers.txt`. The buyer's data goes with the Neon project; export first if asked.
+
+## What changed on 2026-09-08 (read before provisioning)
+
+- `ENCRYPTION_KEY` (32 bytes, base64 or hex) is required on every deployment. Tenant SMTP passwords and LLM keys are sealed with it; saving a mailbox without it fails on purpose. Rows written before this stay readable (plain text is detected and used).
+- The daily cron inserts a `scheduled_sends` row as `pending` before sending, guarded by the unique index `scheduled_sends_once_per_day` (`drizzle/0002_send_guard.sql`, also created at runtime). Retries and overlapping runs cannot double-send. Tenants whose trial lapsed or whose card failed are skipped. Every failure writes a `failed` row.
+- A tenant's first day of notes is held as `pending_approval`; the Schedule page shows the batch with one "Send them on the next run" button (`POST /api/schedule/approve`). Nothing goes out for a new account until the owner has seen its voice.
+- Cards are tenant-scoped (own card, else a system card, never another tenant's). Children's birthdays send to the parent contact.
+- Every note's footer carries the tenant's mailing address from Settings, Business profile (`tenants.postal_address`). New tenants should fill it in before the first batch.
+- `/api/contacts` and `/api/contacts/bulk` require an active trial or subscription and enforce seats x 250. `/api/contacts/export` returns the book as CSV.
+- `OPERATOR_NOTIFY_TO` plus `SMTP_URL` on the selling deployment: a "Money landed" email on every checkout. Without them it is logged and skipped.
+- Sports Monitor is hidden from the nav and the landing page until contacts can pick a team in the UI; the cron still runs for rows that exist.

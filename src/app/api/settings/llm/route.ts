@@ -2,6 +2,16 @@ import { NextResponse } from "next/server"
 import { auth } from "@clerk/nextjs/server"
 import { db, tenantUsers, tenantLlmConfig } from "@/lib/db"
 import { eq } from "drizzle-orm"
+import { z } from "zod"
+import { seal } from "@/lib/crypto"
+
+// Only providers the LLM client actually speaks to. Anything else would let a
+// tenant point our server at an arbitrary URL with their "key".
+const Body = z.object({
+  provider: z.enum(["openrouter", "openai", "anthropic", "google"]),
+  model: z.string().trim().min(1).max(120).regex(/^[a-z0-9._:/-]+$/i),
+  apiKey: z.string().trim().min(8).max(512).optional().or(z.literal("")),
+})
 
 async function getTenantId(userId: string) {
   const u = await db.query.tenantUsers.findFirst({ where: eq(tenantUsers.clerkUserId, userId) })
@@ -16,7 +26,10 @@ export async function POST(req: Request) {
     const tenantId = await getTenantId(userId)
     if (!tenantId) return NextResponse.json({ error: "No tenant" }, { status: 400 })
 
-    const { provider, model, apiKey } = await req.json()
+    const parsed = Body.safeParse(await req.json().catch(() => null))
+    if (!parsed.success) return NextResponse.json({ error: "Provider must be openrouter, openai, anthropic or google; model is required." }, { status: 400 })
+    const { provider, model } = parsed.data
+    const apiKey = parsed.data.apiKey ? seal(parsed.data.apiKey) : null
 
     const existing = await db.query.tenantLlmConfig.findFirst({
       where: eq(tenantLlmConfig.tenantId, tenantId),
@@ -24,7 +37,7 @@ export async function POST(req: Request) {
 
     if (existing) {
       await db.update(tenantLlmConfig)
-        .set({ provider, model, apiKeyEncrypted: apiKey, updatedAt: new Date() })
+        .set({ provider, model, ...(apiKey ? { apiKeyEncrypted: apiKey } : {}), updatedAt: new Date() })
         .where(eq(tenantLlmConfig.tenantId, tenantId))
     } else {
       await db.insert(tenantLlmConfig).values({

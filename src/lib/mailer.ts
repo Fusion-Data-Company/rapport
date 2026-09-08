@@ -18,6 +18,7 @@ import nodemailer from "nodemailer"
 import type SMTPTransport from "nodemailer/lib/smtp-transport"
 import { db, tenantEmailConfig } from "@/lib/db"
 import { eq } from "drizzle-orm"
+import { open } from "@/lib/crypto"
 
 export type MailMessage = {
   from: string
@@ -75,7 +76,7 @@ export function driverFromConfig(cfg: TenantEmailConfigRow | null | undefined): 
     const port = cfg.smtpPort ?? 587
     return smtpDriver({
       host: cfg.smtpHost, port, secure: port === 465,
-      auth: { user: cfg.smtpUsername, pass: cfg.smtpPasswordEncrypted },
+      auth: { user: cfg.smtpUsername, pass: open(cfg.smtpPasswordEncrypted) ?? "" },
     }, "tenant-smtp")
   }
   return null
