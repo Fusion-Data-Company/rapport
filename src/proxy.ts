@@ -35,9 +35,17 @@ export default clerkMiddleware(async (auth, req) => {
     return NextResponse.redirect(new URL("/dashboard", req.url))
   }
 
-  // Protect all non-public routes
-  if (!isPublicRoute(req)) {
-    await auth.protect()
+  // Protect all non-public routes. Doing the redirect here rather than leaning on
+  // auth.protect() means a signed-out visitor to /schedule lands on the sign-in page
+  // and comes back to where they were going, instead of the 404 protect() falls back
+  // to when it cannot work out a sign-in URL for itself.
+  if (!isPublicRoute(req) && !userId) {
+    if (req.nextUrl.pathname.startsWith("/api/")) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+    const signIn = new URL("/sign-in", req.url)
+    signIn.searchParams.set("redirect_url", `${req.nextUrl.pathname}${req.nextUrl.search}`)
+    return NextResponse.redirect(signIn)
   }
 
   // Expose the pathname to server layouts (used by the billing gate in app/(app)/layout.tsx).
