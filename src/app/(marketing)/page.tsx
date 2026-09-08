@@ -7,7 +7,7 @@ import {
 const isDemo = process.env.NEXT_PUBLIC_DEMO_MODE === "true"
 
 const css = `
-.rp{--teal:#2BA8A2;--teal2:#1E8C86;--teal3:#3CC4BD;--gold:#FFD23F;--ink:#F1F5F9;--dim:rgba(148,163,184,.9);--card:rgba(15,28,48,.88);--line:rgba(43,168,162,.14);background:#09111F;color:var(--ink);font-family:Inter,system-ui,sans-serif;min-height:100vh}
+.rp{--teal:#2BA8A2;--teal2:#1E8C86;--teal3:#3CC4BD;--gold:#FFD23F;--ink:#F1F5F9;--dim:#C3D2E2;--card:rgba(15,28,48,.88);--line:rgba(43,168,162,.14);background:#09111F;color:var(--ink);font-family:Inter,system-ui,sans-serif;min-height:100vh}
 .rp .wrap{max-width:1120px;margin:0 auto;padding:0 24px}
 .rp h1,.rp h2{font-family:'Playfair Display',Georgia,serif;font-weight:800;letter-spacing:-.01em}
 .rp h2{font-size:clamp(1.7rem,3.4vw,2.4rem);margin:0 0 14px}
@@ -115,7 +115,7 @@ export default function HomePage() {
               <Link href="/sign-up" className="btn p">{isDemo ? "Open the demo, no card" : "Start 14-day free trial"} <ArrowRight size={18} /></Link>
               <a href="#how" className="btn g">See how it works</a>
             </div>
-            <p style={{ fontSize: 13, color: "rgba(100,116,139,.95)", marginTop: 16 }}>
+            <p style={{ fontSize: 13, color: "#9BB0C6", marginTop: 16 }}>
               $39 a month up to 1,000 contacts · no onboarding call · cancel any time
             </p>
           </div>
@@ -136,7 +136,7 @@ export default function HomePage() {
                 </div>
               </div>
             ))}
-            <p style={{ fontSize: 12, color: "rgba(100,116,139,.9)", margin: "8px 0 0" }}>From the demo book. Names are fictional.</p>
+            <p style={{ fontSize: 12, color: "#9BB0C6", margin: "8px 0 0" }}>From the demo book. Names are fictional.</p>
           </div>
         </div>
       </section>
@@ -206,7 +206,7 @@ export default function HomePage() {
               <p style={{ margin: "0 0 4px", fontSize: 12, color: "var(--dim)" }}>To: dana@whitfieldroofing.com</p>
               <p style={{ margin: "0 0 14px", fontSize: 15, fontWeight: 700, color: "#fff" }}>Before your November renewal</p>
               <p className="note">{SAMPLE_NOTE}</p>
-              <p style={{ margin: "18px 0 0", fontSize: 11, color: "rgba(100,116,139,.85)" }}>
+              <p style={{ margin: "18px 0 0", fontSize: 11, color: "#9BB0C6" }}>
                 Bell Family Insurance, 1200 Peachtree St, Atlanta GA 30309. Unsubscribe.
               </p>
             </div>
@@ -380,7 +380,7 @@ export default function HomePage() {
                 <span style={{ fontSize: 14, color: "var(--dim)" }}>{f}</span>
               </div>
             ))}
-            <p style={{ fontSize: 12, color: "rgba(100,116,139,.9)", marginTop: 14 }}>
+            <p style={{ fontSize: 12, color: "#9BB0C6", marginTop: 14 }}>
               The contact figures are soft. Go over and Rapport tells you; it never refuses a contact
               or blocks an import.
             </p>
@@ -455,7 +455,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <footer style={{ borderTop: "1px solid rgba(43,168,162,.1)", padding: "24px 40px", textAlign: "center", color: "rgba(100,116,139,.8)", fontSize: 13 }}>
+      <footer style={{ borderTop: "1px solid rgba(43,168,162,.1)", padding: "24px 40px", textAlign: "center", color: "#9BB0C6", fontSize: 13 }}>
         © {new Date().getFullYear()} Fusion Data Company · Rapport · <a href="/terms" style={{ color: "inherit" }}>Terms</a> · <a href="/privacy" style={{ color: "inherit" }}>Privacy</a> · <a href="/refunds" style={{ color: "inherit" }}>Refunds</a> · rob@fusiondataco.com · (916) 507-4160 · 7908 Katella Way, Citrus Heights, CA 95621
       </footer>
     </div>

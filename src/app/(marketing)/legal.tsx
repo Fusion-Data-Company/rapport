@@ -5,15 +5,15 @@ export const LEGAL_UPDATED = "8 September 2026"
 export const VENDOR = { name: "Fusion Data Company", address: "7908 Katella Way, Citrus Heights, CA 95621", email: "rob@fusiondataco.com", phone: "(916) 507-4160" }
 
 const css = `
-.rl{--teal:#2BA8A2;--ink:#F1F5F9;--dim:rgba(148,163,184,.9);background:#09111F;color:var(--ink);font-family:Inter,system-ui,sans-serif;min-height:100vh}
+.rl{--teal:#2BA8A2;--ink:#F1F5F9;--dim:#C3D2E2;background:#09111F;color:var(--ink);font-family:Inter,system-ui,sans-serif;min-height:100vh}
 .rl .wrap{max-width:760px;margin:0 auto;padding:0 24px 80px}
 .rl h1{font-family:'Playfair Display',Georgia,serif;font-size:36px;margin:8px 0 6px;color:#fff}
 .rl h2{font-size:18px;margin:30px 0 8px;color:#fff}
 .rl p{color:var(--dim);font-size:15.5px;line-height:1.7;margin:0 0 12px}
 .rl a{color:var(--teal)}
 .rl .kick{color:var(--teal);font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase}
-.rl .meta{font-size:13px;color:rgba(100,116,139,.9)}
-.rl footer{margin-top:48px;padding-top:20px;border-top:1px solid rgba(43,168,162,.14);font-size:13px;color:rgba(100,116,139,.9)}
+.rl .meta{font-size:13px;color:#9BB0C6}
+.rl footer{margin-top:48px;padding-top:20px;border-top:1px solid rgba(43,168,162,.14);font-size:13px;color:#9BB0C6}
 `
 
 export function LegalShell({ kicker, title, children }: { kicker: string; title: string; children: React.ReactNode }) {

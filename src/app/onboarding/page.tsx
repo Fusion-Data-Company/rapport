@@ -21,9 +21,9 @@ const css = `
 .ob label{display:block;font-size:11.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);margin:0 0 7px}
 .ob .fld{margin-bottom:18px}
 .ob input{width:100%;box-sizing:border-box;padding:13px 15px;border-radius:12px;background:rgba(9,17,31,.85);border:1px solid var(--line);color:#fff;font-size:15px;font-family:inherit;outline:none;transition:border-color .15s,box-shadow .15s}
-.ob input::placeholder{color:rgba(100,116,139,.85)}
+.ob input::placeholder{color:#9BB0C6}
 .ob input:focus{border-color:var(--teal);box-shadow:0 0 0 3px rgba(43,168,162,.16)}
-.ob .hint{font-size:12.5px;color:rgba(100,116,139,.95);margin:-10px 0 18px}
+.ob .hint{font-size:12.5px;color:#9BB0C6;margin:-10px 0 18px}
 .ob .btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;padding:14px 26px;border-radius:999px;font-weight:700;font-size:15px;border:0;cursor:pointer;font-family:inherit}
 .ob .btn.p{background:linear-gradient(135deg,var(--teal),var(--teal2));color:#fff;box-shadow:0 8px 30px rgba(43,168,162,.34)}
 .ob .btn.p:disabled{opacity:.4;box-shadow:none;cursor:not-allowed}

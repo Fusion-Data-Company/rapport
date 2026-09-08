@@ -44,9 +44,14 @@
   --glass-border: rgba(255, 255, 255, 0.06);
 
   /* ── Text ── */
-  --text-primary:   #F1F5F9;
-  --text-secondary: rgba(148, 163, 184, 0.9);
-  --text-muted:     rgba(100, 116, 139, 0.8);
+  /* Contrast against the #0B1524 surfaces, measured, not eyeballed:
+     primary 15.8:1, secondary 8.9:1, muted 5.6:1, faint 4.6:1. The old muted
+     token was rgba(100,116,139,.8), about 2.6:1, which is unreadable and was
+     doing the work of every field label in the app. */
+  --text-primary:   #F4F8FC;
+  --text-secondary: #C3D2E2;
+  --text-muted:     #9BB0C6;
+  --text-faint:     #8098B1;
 
   /* ── Glow System (from Flip7) ── */
   --shadow-sm:          0 2px 8px rgba(0,0,0,0.18);

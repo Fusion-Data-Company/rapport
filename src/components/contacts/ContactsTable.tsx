@@ -30,7 +30,7 @@ const TH: React.CSSProperties = {
   padding: "7px 10px", boxSizing: "border-box", position: "relative",
   whiteSpace: "nowrap", fontSize: "10px", fontWeight: 700,
   textTransform: "uppercase", letterSpacing: "0.08em",
-  color: "rgba(100,116,139,0.9)",
+  color: "#9BB0C6",
   borderBottom: "1px solid rgba(43,168,162,0.10)",
   background: "rgba(9,17,31,0.95)",
 }
