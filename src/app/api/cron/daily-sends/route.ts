@@ -4,7 +4,7 @@ import { eq, and, or, inArray, sql } from "drizzle-orm"
 import { open } from "@/lib/crypto"
 import { claimSend, ensureSendGuard, tenantMaySend, tenantNeedsApproval } from "@/lib/send-guard"
 import { generateEmailContent, type LLMConfig } from "@/lib/llm"
-import { cardFor, deliver, deliverWrittenRow, notePayload } from "@/lib/deliver"
+import { cardForNote, deliver, deliverWrittenRow, notePayload } from "@/lib/deliver"
 import { dispatch } from "@/lib/webhooks"
 import type { BodyStyle } from "@/lib/email-body"
 import { capState } from "@/lib/send-caps"
@@ -132,12 +132,21 @@ export async function GET(req: Request) {
           // A review link has to survive the model, so it is appended after drafting
           // rather than trusted to come back out of the prompt intact.
           const finalBody = occasion.appendix ? `${body}\n\n${occasion.appendix}` : body
-          const card = await cardFor(tenant.id, occasion.type)
+          // The card is made for this contact, with their name on it. A child's
+          // birthday card carries the child's name, because that is whose day it is.
+          const card = await cardForNote({
+            tenantId: tenant.id,
+            occasion: occasion.type,
+            name: occasion.childName ?? contact.nickname?.trim() ?? contact.firstName,
+          })
 
           if (needsApproval) {
             // Written, not sent. The Schedule page releases it.
             await db.update(scheduledSends)
-              .set({ status: "pending_approval", emailSubject: subject, emailBodyText: finalBody, cardTemplateId: card?.id ?? null })
+              .set({
+                status: "pending_approval", emailSubject: subject, emailBodyText: finalBody,
+                cardTemplateId: card.templateId, cardImageUrl: card.imageUrl, cardSource: card.source,
+              })
               .where(eq(scheduledSends.id, sendId))
             await dispatch(tenant.id, "note.held", notePayload({
               event: "note.held", tenant, contact, sendId,
@@ -149,14 +158,21 @@ export async function GET(req: Request) {
           }
           if (budget <= 0) {
             await db.update(scheduledSends)
-              .set({ status: "deferred", emailSubject: subject, emailBodyText: finalBody, cardTemplateId: card?.id ?? null, errorMessage: "Held back by today's mailbox send cap." })
+              .set({
+                status: "deferred", emailSubject: subject, emailBodyText: finalBody,
+                cardTemplateId: card.templateId, cardImageUrl: card.imageUrl, cardSource: card.source,
+                errorMessage: "Held back by today's mailbox send cap.",
+              })
               .where(eq(scheduledSends.id, sendId))
             deferred++
             continue
           }
 
+          await db.update(scheduledSends)
+            .set({ cardTemplateId: card.templateId, cardImageUrl: card.imageUrl, cardSource: card.source })
+            .where(eq(scheduledSends.id, sendId))
           await deliver({
-            sendId, tenant, contact, subject, body: finalBody, cardUrl: card?.imageUrl, style,
+            sendId, tenant, contact, subject, body: finalBody, cardUrl: card.imageUrl, style,
             occasionType: occasion.type, occasionLabel: occasion.label, scheduledDate: today,
           })
           budget--

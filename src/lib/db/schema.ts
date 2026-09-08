@@ -292,6 +292,13 @@ export const scheduledSends = pgTable("scheduled_sends", {
   scheduledDate: date("scheduled_date").notNull(),
   status: text("status").notNull().default("pending"),
   cardTemplateId: uuid("card_template_id").references(() => cardTemplates.id),
+  /** The picture actually sent. Generated for this contact when a provider is
+   *  configured, otherwise the occasion's system card. */
+  cardImageUrl: text("card_image_url"),
+  /** The sender's own line, folded into the generation brief. */
+  cardNote: text("card_note"),
+  /** generated | tenant | system | none */
+  cardSource: text("card_source"),
   emailSubject: text("email_subject"),
   emailBodyHtml: text("email_body_html"),
   emailBodyText: text("email_body_text"),

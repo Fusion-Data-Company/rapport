@@ -6,6 +6,7 @@ import { ensureSchema } from "@/lib/db/ensure"
 import { todayISO, addDays } from "@/lib/dates"
 import { occasionsForDay, type ContactForOccasions } from "@/lib/occasions"
 import { askedForReview, lastSentByContact, withinTierGap } from "@/lib/tiers"
+import { occasionLine } from "@/lib/card-image"
 
 export const runtime = "nodejs"
 
@@ -28,6 +29,14 @@ export type ScheduleItem = {
   emailSubject: string | null
   emailBodyText: string | null
   errorMessage: string | null
+  /** The card that goes out with this note, with the contact's name printed on it. */
+  cardImageUrl: string | null
+  /** generated | tenant | system | none */
+  cardSource: string | null
+  /** The sender's own line, folded into the card's brief. */
+  cardNote: string | null
+  /** What the card says: "Happy Birthday, Rob". */
+  cardLine: string
 }
 
 const WINDOW_DAYS = 30
@@ -69,6 +78,10 @@ export async function GET() {
     emailSubject: s.emailSubject,
     emailBodyText: s.emailBodyText,
     errorMessage: s.errorMessage,
+    cardImageUrl: s.cardImageUrl,
+    cardSource: s.cardSource,
+    cardNote: s.cardNote,
+    cardLine: occasionLine(s.occasionType, contact?.nickname?.trim() || contact?.firstName || "Friend"),
   }))
 
   // Anything already written is not projected again.
@@ -109,6 +122,10 @@ export async function GET() {
           emailSubject: null,
           emailBodyText: null,
           errorMessage: null,
+          cardImageUrl: null,
+          cardSource: null,
+          cardNote: null,
+          cardLine: occasionLine(occasion.type, occasion.childName ?? c?.nickname?.trim() ?? c?.firstName ?? "Friend"),
         })
       }
     }

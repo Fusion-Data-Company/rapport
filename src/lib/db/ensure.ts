@@ -120,6 +120,14 @@ async function run() {
   `)
   await db.execute(sql`create index if not exists webhook_endpoints_tenant_idx on webhook_endpoints (tenant_id)`)
 
+  // 0011 - the card that belongs to one note
+  await db.execute(sql`
+    alter table scheduled_sends
+      add column if not exists card_image_url text,
+      add column if not exists card_note text,
+      add column if not exists card_source text
+  `)
+
   // 0008 - the Google review request touch
   await db.execute(sql`
     alter table tenants

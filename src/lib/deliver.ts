@@ -13,6 +13,7 @@ import { buildNote, type BodyStyle } from "@/lib/email-body"
 import { capState } from "@/lib/send-caps"
 import { recordTimeline } from "@/lib/timeline"
 import { dispatch, type NotePayload, type WebhookEvent } from "@/lib/webhooks"
+import { resolveCard, type ResolvedCard } from "@/lib/card-image"
 
 export type TenantRow = typeof tenants.$inferSelect
 export type ContactRow = typeof contacts.$inferSelect
@@ -63,6 +64,33 @@ export async function cardFor(tenantId: string, occasion: string) {
       or(eq(cardTemplates.tenantId, tenantId), isNull(cardTemplates.tenantId)),
     ),
     orderBy: (c, { desc }) => [desc(c.tenantId)],
+  })
+}
+
+/**
+ * The card for one note, with this contact's name on it.
+ *
+ * Generation first when a provider is configured; the occasion's system card when it
+ * is not, or when generation fails. The result is never null-and-nothing: an agent
+ * who has not connected anything still sends a card with a name on it.
+ */
+export async function cardForNote(opts: {
+  tenantId: string
+  occasion: string
+  /** The name printed on the card. A child's name for a child's birthday. */
+  name: string
+  senderLine?: string | null
+  timeoutMs?: number
+}): Promise<ResolvedCard> {
+  const fallback = await cardFor(opts.tenantId, opts.occasion)
+  return resolveCard({
+    occasion: opts.occasion,
+    name: opts.name,
+    senderLine: opts.senderLine,
+    timeoutMs: opts.timeoutMs,
+    fallback: fallback
+      ? { id: fallback.id, imageUrl: fallback.imageUrl, thumbnailUrl: fallback.thumbnailUrl, tenantId: fallback.tenantId }
+      : null,
   })
 }
 
@@ -158,14 +186,20 @@ export async function deliverWrittenRow(opts: {
     return { outcome: "deferred" }
   }
   try {
-    const card = send.cardTemplateId
-      ? await db.query.cardTemplates.findFirst({ where: eq(cardTemplates.id, send.cardTemplateId) })
-      : await cardFor(tenant.id, send.occasionType)
+    // The card this row was queued with. Only when a row predates the card columns
+    // is the template looked up again.
+    let cardUrl = send.cardImageUrl
+    if (!cardUrl) {
+      const card = send.cardTemplateId
+        ? await db.query.cardTemplates.findFirst({ where: eq(cardTemplates.id, send.cardTemplateId) })
+        : await cardFor(tenant.id, send.occasionType)
+      cardUrl = card?.imageUrl ?? null
+    }
     await deliver({
       sendId: send.id, tenant, contact,
       subject: send.emailSubject ?? "Thinking of you",
       body: send.emailBodyText ?? "",
-      cardUrl: card?.imageUrl, style,
+      cardUrl, style,
       occasionType: send.occasionType, occasionLabel: send.occasionLabel, scheduledDate: send.scheduledDate,
     })
     return { outcome: "sent" }
