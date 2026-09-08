@@ -4,19 +4,21 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { motion, AnimatePresence } from "framer-motion"
 import { GlassCard } from "@/components/ui/glass-card"
 import { GlassButton } from "@/components/ui/glass-button"
-import { Upload, CreditCard, Cake, Heart, Baby, Smile, Trophy, X, Plus, Eye } from "lucide-react"
+import { Upload, CreditCard, Cake, Heart, Baby, FileText, KeyRound, Landmark, Coffee, Star, X, Plus, Eye } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { CardTemplateRow } from "@/lib/types"
 
+// The occasions the scheduler can actually raise. Anything else is a card nobody
+// will ever send, and the old sports-CRM list was exactly that.
 const OCCASIONS = [
-  { type: "birthday",       label: "Birthday",       icon: Cake,    color: "var(--teal)" },
-  { type: "anniversary",    label: "Anniversary",    icon: Heart,   color: "var(--coral)" },
-  { type: "child_birthday", label: "Child's Birthday", icon: Baby, color: "var(--sky)" },
-  { type: "get_well",       label: "Get Well Soon",  icon: Smile,   color: "var(--gold)" },
-  { type: "sports_win",     label: "Sports Win",     icon: Trophy,  color: "var(--gold)" },
-  { type: "sports_loss",    label: "Better Luck",    icon: Trophy,  color: "var(--text-muted)" },
-  { type: "appreciation",   label: "Appreciation",   icon: CreditCard, color: "var(--teal)" },
-  { type: "new_baby",       label: "New Baby",       icon: Baby,    color: "var(--sky)" },
+  { type: "birthday",           label: "Birthday",          icon: Cake,     color: "var(--teal)" },
+  { type: "anniversary",        label: "Anniversary",       icon: Heart,    color: "var(--coral)" },
+  { type: "child_birthday",     label: "Child's Birthday",  icon: Baby,     color: "var(--sky)" },
+  { type: "policy_renewal",     label: "Policy Renewal",    icon: FileText, color: "var(--gold)" },
+  { type: "home_anniversary",   label: "Home Anniversary",  icon: KeyRound, color: "var(--teal)" },
+  { type: "loan_anniversary",   label: "Loan Anniversary",  icon: Landmark, color: "var(--teal)" },
+  { type: "months_since_close", label: "Since Closing",     icon: Coffee,   color: "var(--gold)" },
+  { type: "review_request",     label: "Review Request",    icon: Star,     color: "var(--coral)" },
 ] as const
 
 type OccasionType = typeof OCCASIONS[number]["type"]
