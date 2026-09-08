@@ -172,7 +172,8 @@ export async function GET(req: Request) {
             .set({ cardTemplateId: card.templateId, cardImageUrl: card.imageUrl, cardSource: card.source })
             .where(eq(scheduledSends.id, sendId))
           await deliver({
-            sendId, tenant, contact, subject, body: finalBody, cardUrl: card.imageUrl, style,
+            sendId, tenant, contact, subject, body: finalBody,
+            cardUrl: card.imageUrl, cardAlt: card.line, style,
             occasionType: occasion.type, occasionLabel: occasion.label, scheduledDate: today,
           })
           budget--

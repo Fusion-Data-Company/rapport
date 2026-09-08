@@ -65,7 +65,10 @@ export default function CardsPage() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-h1 text-white" style={{ fontFamily: "'Playfair Display', serif" }}>Card Gallery</h1>
-          <p className="text-sm text-[var(--text-muted)]">Greeting cards embedded in milestone emails</p>
+          <p className="text-sm text-[var(--text-secondary)]">
+            Every note goes out with a card, and the card carries the contact&apos;s own name.
+            These are the Rapport cards for each occasion; the name is set at send time.
+          </p>
         </div>
         <GlassButton size="sm" onClick={() => document.getElementById("card-upload")?.click()} loading={uploadMutation.isPending}>
           <Upload className="w-3.5 h-3.5" /> Upload Cards
@@ -122,7 +125,7 @@ export default function CardsPage() {
           </GlassButton>
         </div>
       ) : (
-        <motion.div layout className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+        <motion.div layout className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-5">
           <AnimatePresence>
             {cards.map((card: CardTemplateRow) => (
               <motion.div
@@ -133,11 +136,14 @@ export default function CardsPage() {
                 exit={{ opacity: 0, scale: 0.9 }}
                 className="group relative"
               >
-                <GlassCard className="overflow-hidden p-0 aspect-[3/2]">
-                  <img src={card.imageUrl} alt={card.name}
-                    className="w-full h-full object-cover transition-transform group-hover:scale-105" />
+                {/* A greeting card is portrait, and it is never cropped: object-cover on
+                    a 3:2 tile cut the printed name off the bottom of every one of them. */}
+                <GlassCard className="overflow-hidden p-0 aspect-[4/5] bg-white/[0.03]">
+                  <img src={card.thumbnailUrl ?? card.imageUrl} alt={card.description ?? card.name}
+                    loading="lazy"
+                    className="w-full h-full object-contain transition-transform group-hover:scale-[1.03]" />
                   {/* Overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-between p-3">
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-between p-3">
                     <p className="text-xs font-semibold text-white truncate">{card.name}</p>
                     <div className="flex gap-1">
                       <button onClick={() => setPreview(card.imageUrl)}
@@ -154,10 +160,16 @@ export default function CardsPage() {
                   </div>
                   {card.isSystem && (
                     <div className="absolute top-2 left-2">
-                      <span className="badge badge-teal text-[9px]">System</span>
+                      <span className="badge badge-teal text-[9px]">Rapport</span>
                     </div>
                   )}
                 </GlassCard>
+                {/* What the card actually says, with <name> standing in for whoever it
+                    is being made for. An agent should never have to open a card to
+                    find out what line it prints. */}
+                <p className="mt-2 text-[11px] leading-snug text-[var(--text-secondary)] line-clamp-2">
+                  {card.description ?? card.name}
+                </p>
               </motion.div>
             ))}
           </AnimatePresence>
@@ -172,7 +184,7 @@ export default function CardsPage() {
             onClick={() => setPreview(null)}>
             <motion.img src={preview} alt="Card preview"
               initial={{ scale: 0.8 }} animate={{ scale: 1 }} exit={{ scale: 0.8 }}
-              className="max-w-full max-h-full object-contain rounded-2xl"
+              className="max-w-full max-h-full object-contain rounded-2xl shadow-[var(--shadow-lg)]"
               onClick={e => e.stopPropagation()} />
             <button onClick={() => setPreview(null)}
               className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center">

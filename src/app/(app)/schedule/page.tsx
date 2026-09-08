@@ -5,6 +5,7 @@ import { GlassButton } from "@/components/ui/glass-button"
 import { GlassCard } from "@/components/ui/glass-card"
 import {
   Calendar, Mail, Check, X, Pencil, Loader2, AlertTriangle, CheckCircle2, ChevronDown, ChevronRight,
+  Sparkles, ImageIcon,
 } from "lucide-react"
 import { formatDate } from "@/lib/utils"
 import type { ScheduleItem } from "@/app/api/schedule/upcoming/route"
@@ -45,6 +46,112 @@ function DateChip({ date, tint }: { date: string; tint: string }) {
         {d.toLocaleDateString("en-US", { month: "short", timeZone: "UTC" })}
       </span>
       <span className="text-xl font-bold text-white leading-none">{d.getUTCDate()}</span>
+    </div>
+  )
+}
+
+/**
+ * The card that goes out with this note.
+ *
+ * Rob's product is the card, so the queue shows the card - not a filename, not a
+ * chip that says "card attached". The line under it is what is PRINTED on the
+ * cardstock, so an agent can read the name before anything leaves the building.
+ *
+ * The sender's own line goes into the generation brief. It steers the artwork; it is
+ * not stamped as a second line of foil, because a second line is where a text model
+ * starts misspelling and the sender's sentence already belongs in the note itself.
+ */
+function CardPanel({ item }: { item: ScheduleItem }) {
+  const qc = useQueryClient()
+  const [note, setNote] = useState(item.cardNote ?? "")
+  const [open, setOpen] = useState(false)
+  const [card, setCard] = useState<{ url: string | null; source: string | null; line: string }>({
+    url: item.cardImageUrl, source: item.cardSource, line: item.cardLine,
+  })
+  const [error, setError] = useState<string | null>(null)
+
+  const remake = useMutation({
+    mutationFn: async () => {
+      const r = await fetch(`/api/schedule/${item.id}/card`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ note: note.trim() || undefined }),
+      })
+      const d = await r.json()
+      if (!r.ok) throw new Error(d.error ?? "Could not make that card")
+      return d as { cardImageUrl: string | null; cardSource: string | null; cardLine: string; generationConfigured: boolean; error: string | null }
+    },
+    onSuccess: (d) => {
+      setCard({ url: d.cardImageUrl, source: d.cardSource, line: d.cardLine })
+      setError(d.generationConfigured ? d.error : "Runtime card generation is not switched on yet, so this is the named card for the occasion.")
+      qc.invalidateQueries({ queryKey: ["schedule"] })
+    },
+    onError: (e: Error) => setError(e.message),
+  })
+
+  return (
+    <div className="mt-4 flex gap-4 items-start">
+      <div className="w-28 sm:w-32 shrink-0">
+        {card.url ? (
+          <img
+            src={card.url}
+            alt={card.line}
+            className="w-full rounded-xl border border-[var(--surface-border)] shadow-[var(--shadow-md)] bg-white"
+          />
+        ) : (
+          <div className="w-full aspect-[4/5] rounded-xl border border-dashed border-[var(--surface-border)] flex flex-col items-center justify-center gap-1 text-center px-2">
+            <ImageIcon className="w-5 h-5 text-[var(--text-muted)]" />
+            <p className="text-[10px] text-[var(--text-muted)] leading-tight">Card is made when this note is written</p>
+          </div>
+        )}
+      </div>
+
+      <div className="flex-1 min-w-0">
+        <p className="text-[10px] uppercase tracking-[0.18em] text-[var(--text-muted)] font-semibold">The card says</p>
+        <p className="text-sm text-white font-medium mt-0.5">{card.line}</p>
+        <p className="text-[11px] text-[var(--text-muted)] mt-1">
+          {card.source === "generated" ? "Made for this contact"
+            : card.source === "tenant" ? "From your gallery"
+            : card.source === "system" ? "Rapport card for this occasion"
+            : "Not made yet"}
+        </p>
+
+        {open ? (
+          <div className="mt-3 space-y-2">
+            <label htmlFor={`cardnote-${item.id}`} className="block text-xs font-semibold text-[var(--text-secondary)]">
+              Your line for the artist
+            </label>
+            <input
+              id={`cardnote-${item.id}`}
+              value={note}
+              maxLength={160}
+              onChange={(e) => setNote(e.target.value)}
+              className="input-premium text-sm w-full"
+              placeholder="They just got a golden retriever puppy"
+            />
+            <p className="text-[11px] text-[var(--text-muted)]">
+              This shapes what gets painted on the card. The printed line stays {card.line}.
+            </p>
+            <div className="flex gap-2">
+              <GlassButton size="sm" loading={remake.isPending} onClick={() => { setError(null); remake.mutate() }}>
+                <Sparkles className="w-3.5 h-3.5" /> Make this card
+              </GlassButton>
+              <button type="button" className="text-sm text-[var(--text-muted)] underline" onClick={() => setOpen(false)}>
+                Close
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setOpen(true)}
+            className="mt-2 text-xs font-semibold text-[var(--teal-light)] underline underline-offset-2"
+          >
+            Add a line and remake the card
+          </button>
+        )}
+
+        {error && <p className="text-xs text-[var(--gold)] mt-2">{error}</p>}
+      </div>
     </div>
   )
 }
@@ -134,6 +241,8 @@ function ReviewCard({ item, onDone }: { item: ScheduleItem; onDone: (r: ApproveR
               {body && <p className="text-sm text-[var(--text-secondary)] whitespace-pre-wrap mt-1 leading-relaxed">{body}</p>}
             </div>
           )}
+
+          {!editing && <CardPanel item={item} />}
 
           {error && <p className="text-sm text-[var(--coral)] mt-2">{error}</p>}
 
@@ -281,10 +390,14 @@ export default function SchedulePage() {
                       className="p-3 sm:p-4 flex items-center gap-3 sm:gap-4"
                     >
                       <DateChip date={item.scheduledDate} tint={color(item)} />
-                      <div className="w-1 h-8 rounded-full shrink-0" style={{ background: color(item) }} />
+                      {item.cardImageUrl
+                        ? <img src={item.cardImageUrl} alt={item.cardLine}
+                            className="w-9 rounded-md border border-[var(--surface-border)] shrink-0 bg-white" />
+                        : <div className="w-1 h-8 rounded-full shrink-0" style={{ background: color(item) }} />}
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold text-white truncate">{name(item)}</p>
                         <p className="text-sm text-[var(--text-muted)] truncate">{item.occasionLabel}</p>
+                        <p className="text-[11px] text-[var(--text-faint)] truncate">{item.cardLine}</p>
                         {item.emailSubject && (
                           <p className="text-xs text-[var(--text-muted)] truncate mt-0.5">
                             <Mail className="w-3 h-3 inline mr-1" />{item.emailSubject}

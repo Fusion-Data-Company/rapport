@@ -13,7 +13,7 @@ import { buildNote, type BodyStyle } from "@/lib/email-body"
 import { capState } from "@/lib/send-caps"
 import { recordTimeline } from "@/lib/timeline"
 import { dispatch, type NotePayload, type WebhookEvent } from "@/lib/webhooks"
-import { resolveCard, type ResolvedCard } from "@/lib/card-image"
+import { occasionLine, resolveCard, type ResolvedCard } from "@/lib/card-image"
 
 export type TenantRow = typeof tenants.$inferSelect
 export type ContactRow = typeof contacts.$inferSelect
@@ -106,13 +106,15 @@ export async function remainingToday(tenantId: string): Promise<number> {
 }
 
 /** Send one written note and record everything that follows from it. */
-export async function deliver({ sendId, tenant, contact, subject, body, cardUrl, style, occasionType, occasionLabel, scheduledDate }: {
+export async function deliver({ sendId, tenant, contact, subject, body, cardUrl, cardAlt, style, occasionType, occasionLabel, scheduledDate }: {
   sendId: string
   tenant: TenantRow
   contact: ContactRow
   subject: string
   body: string
   cardUrl?: string | null
+  /** What the card says. Becomes the image alt so the line survives images-off. */
+  cardAlt?: string | null
   style: BodyStyle
   occasionType: string
   occasionLabel: string
@@ -121,6 +123,7 @@ export async function deliver({ sendId, tenant, contact, subject, body, cardUrl,
   const unsubUrl = unsubscribeUrl(contact.id)
   const note = buildNote({
     body, cardUrl, style,
+    cardAlt: cardAlt ?? occasionLine(occasionType, contact.nickname?.trim() || contact.firstName),
     businessName: tenant.businessName,
     fromName: tenant.fromName,
     unsubscribeUrl: unsubUrl,
@@ -200,6 +203,7 @@ export async function deliverWrittenRow(opts: {
       subject: send.emailSubject ?? "Thinking of you",
       body: send.emailBodyText ?? "",
       cardUrl, style,
+      cardAlt: occasionLine(send.occasionType, contact.nickname?.trim() || contact.firstName),
       occasionType: send.occasionType, occasionLabel: send.occasionLabel, scheduledDate: send.scheduledDate,
     })
     return { outcome: "sent" }
