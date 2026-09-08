@@ -1,11 +1,13 @@
 import { NextResponse } from "next/server"
-import { db, contacts, contactChildren, scheduledSends, cardTemplates, tenants, tenantLlmConfig, sendLog } from "@/lib/db"
+import { db, contacts, contactChildren, scheduledSends, cardTemplates, tenants, tenantEmailConfig, tenantLlmConfig, sendLog } from "@/lib/db"
 import { eq, and, or, isNull, inArray, sql } from "drizzle-orm"
 import { open } from "@/lib/crypto"
 import { claimSend, ensureSendGuard, tenantMaySend, tenantNeedsApproval } from "@/lib/send-guard"
 import { generateEmailContent, type LLMConfig } from "@/lib/llm"
 import { sendMail } from "@/lib/mailer"
 import { unsubscribeUrl } from "@/lib/unsubscribe"
+import { buildNote, type BodyStyle } from "@/lib/email-body"
+import { capState, type CapState } from "@/lib/send-caps"
 
 export const runtime = "nodejs"
 export const maxDuration = 300
@@ -49,7 +51,7 @@ export async function GET(req: Request) {
 
   const mmdd = todayMMDD()
   const today = new Date().toISOString().split("T")[0]
-  let processed = 0; let failed = 0; let held = 0; let skipped = 0
+  let processed = 0; let failed = 0; let held = 0; let skipped = 0; let deferred = 0
 
   try {
     await ensureSendGuard()
@@ -77,12 +79,32 @@ export async function GET(req: Request) {
         .map((ch) => ({ type: "child_birthday" as const, contact: ch.contact as typeof birthdayContacts[number], childName: ch.name })),
     ]
 
-    const tenantCache = new Map<string, { tenant: Tenant | null; llm: LLMConfig | null; needsApproval: boolean }>()
-    async function tenantInfo(tenantId: string) {
+    type TenantInfo = {
+      tenant: Tenant | null
+      llm: LLMConfig | null
+      needsApproval: boolean
+      style: BodyStyle
+      caps: CapState | null
+      /** Counted down as the run delivers, so the daily cap holds across every occasion. */
+      budget: number
+    }
+    const tenantCache = new Map<string, TenantInfo>()
+    async function tenantInfo(tenantId: string): Promise<TenantInfo> {
       let info = tenantCache.get(tenantId)
       if (!info) {
         const tenant = (await db.query.tenants.findFirst({ where: eq(tenants.id, tenantId) })) ?? null
-        info = { tenant, llm: tenant ? await loadLlmConfig(tenantId) : null, needsApproval: tenant ? await tenantNeedsApproval(tenantId) : false }
+        const emailCfg = tenant ? await db.query.tenantEmailConfig.findFirst({ where: eq(tenantEmailConfig.tenantId, tenantId) }) : null
+        const caps = tenant
+          ? await capState({ tenantId, dailyCap: emailCfg?.dailyCap, warmupStartedAt: emailCfg?.warmupStartedAt })
+          : null
+        info = {
+          tenant,
+          llm: tenant ? await loadLlmConfig(tenantId) : null,
+          needsApproval: tenant ? await tenantNeedsApproval(tenantId) : false,
+          style: emailCfg?.bodyStyle === "card" ? "card" : "plain",
+          caps,
+          budget: caps?.remaining ?? 0,
+        }
         tenantCache.set(tenantId, info)
       }
       return info
@@ -91,7 +113,8 @@ export async function GET(req: Request) {
     // Occasion notes: birthdays, anniversaries, children's birthdays. Held or sent once each.
     for (const task of tasks) {
       const contactData = task.contact
-      const { tenant, llm, needsApproval } = await tenantInfo(contactData.tenantId)
+      const info = await tenantInfo(contactData.tenantId)
+      const { tenant, llm, needsApproval } = info
       if (!tenant || !llm) continue
       if (!tenantMaySend(tenant)) { skipped++; continue }
       if (!contactData.email) { skipped++; continue }
@@ -130,7 +153,16 @@ export async function GET(req: Request) {
           continue
         }
 
-        await deliver({ sendId, tenant, contact: contactData, subject, body, cardUrl: card?.imageUrl })
+        if (info.budget <= 0) {
+          // Past today's mailbox cap. The note is written and parked; it goes out next run.
+          await db.update(scheduledSends)
+            .set({ status: "deferred", emailSubject: subject, emailBodyText: body, cardTemplateId: card?.id ?? null, errorMessage: "Held back by today's mailbox send cap." })
+            .where(eq(scheduledSends.id, sendId))
+          deferred++
+          continue
+        }
+        await deliver({ sendId, tenant, contact: contactData, subject, body, cardUrl: card?.imageUrl, style: info.style })
+        info.budget--
         processed++
       } catch (e) {
         console.error(`Send failed for contact ${contactData.id}:`, e)
@@ -141,23 +173,26 @@ export async function GET(req: Request) {
 
     // Approved first-batch rows and pending sports rows for today.
     const queued = await db.query.scheduledSends.findMany({
-      where: and(eq(scheduledSends.scheduledDate, today), inArray(scheduledSends.status, ["approved", "pending"]), sql`${scheduledSends.emailSubject} IS NOT NULL`),
+      where: and(eq(scheduledSends.scheduledDate, today), inArray(scheduledSends.status, ["approved", "pending", "deferred"]), sql`${scheduledSends.emailSubject} IS NOT NULL`),
     })
     for (const send of queued) {
       if (send.status === "pending" && !send.sportsEventId) continue // occasion rows are claimed above, never re-sent here
       try {
         const contact = await db.query.contacts.findFirst({ where: eq(contacts.id, send.contactId) })
-        const { tenant } = await tenantInfo(send.tenantId)
+        const info = await tenantInfo(send.tenantId)
+        const { tenant } = info
         if (!contact?.email || !tenant) { await db.update(scheduledSends).set({ status: "skipped", errorMessage: "No contact or tenant" }).where(eq(scheduledSends.id, send.id)); continue }
         if (!tenantMaySend(tenant)) { skipped++; continue }
         if (contact.unsubscribed || contact.status !== "active") {
           await db.update(scheduledSends).set({ status: "skipped", errorMessage: "Contact unsubscribed" }).where(eq(scheduledSends.id, send.id))
           continue
         }
+        if (info.budget <= 0) { deferred++; continue }
         const card = send.cardTemplateId
           ? await db.query.cardTemplates.findFirst({ where: eq(cardTemplates.id, send.cardTemplateId) })
           : await cardFor(tenant.id, send.occasionType)
-        await deliver({ sendId: send.id, tenant, contact, subject: send.emailSubject ?? "Thinking of you", body: send.emailBodyText ?? "", cardUrl: card?.imageUrl })
+        await deliver({ sendId: send.id, tenant, contact, subject: send.emailSubject ?? "Thinking of you", body: send.emailBodyText ?? "", cardUrl: card?.imageUrl, style: info.style })
+        info.budget--
         processed++
       } catch (e) {
         console.error("Queued send failed:", e)
@@ -166,7 +201,7 @@ export async function GET(req: Request) {
       }
     }
 
-    return NextResponse.json({ ok: true, processed, failed, held, skipped })
+    return NextResponse.json({ ok: true, processed, failed, held, skipped, deferred })
   } catch (e) {
     console.error("Daily cron error:", e)
     return NextResponse.json({ error: "Cron failed" }, { status: 500 })
@@ -176,53 +211,24 @@ export async function GET(req: Request) {
 type Tenant = typeof tenants.$inferSelect
 type Contact = typeof contacts.$inferSelect
 
-async function deliver({ sendId, tenant, contact, subject, body, cardUrl }: {
-  sendId: string; tenant: Tenant; contact: Contact; subject: string; body: string; cardUrl?: string | null
+async function deliver({ sendId, tenant, contact, subject, body, cardUrl, style }: {
+  sendId: string; tenant: Tenant; contact: Contact; subject: string; body: string; cardUrl?: string | null; style: BodyStyle
 }) {
   const unsubUrl = unsubscribeUrl(contact.id)
-  const html = buildEmailHtml({ body, cardUrl, businessName: tenant.businessName, fromName: tenant.fromName, unsubscribeUrl: unsubUrl, postalAddress: tenant.postalAddress ?? null })
+  const note = buildNote({
+    body, cardUrl, style,
+    businessName: tenant.businessName,
+    fromName: tenant.fromName,
+    unsubscribeUrl: unsubUrl,
+    postalAddress: tenant.postalAddress ?? null,
+  })
   const result = await sendMail(tenant.id, {
     from: `${tenant.fromName} <${tenant.fromEmail}>`,
     to: contact.email as string,
-    subject, html, unsubscribeUrl: unsubUrl,
+    subject, text: note.text, html: note.html, unsubscribeUrl: unsubUrl,
   })
   await db.update(scheduledSends)
-    .set({ status: "sent", emailSubject: subject, emailBodyText: body, emailBodyHtml: html, sentAt: new Date() })
+    .set({ status: "sent", emailSubject: subject, emailBodyText: body, emailBodyHtml: note.html, sentAt: new Date() })
     .where(eq(scheduledSends.id, sendId))
   await db.insert(sendLog).values({ tenantId: tenant.id, contactId: contact.id, scheduledSendId: sendId, eventType: "sent", metadata: { providerMessageId: result?.id ?? null } }).catch(() => undefined)
-}
-
-function buildEmailHtml({ body, cardUrl, businessName, fromName, unsubscribeUrl, postalAddress }: {
-  body: string; cardUrl?: string | null; businessName: string; fromName: string; unsubscribeUrl: string; postalAddress?: string | null
-}) {
-  return `<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>${businessName}</title></head>
-<body style="margin:0;padding:0;background:#0a0f1e;font-family:Georgia,serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#0a0f1e;padding:40px 20px;">
-    <tr><td>
-      <table width="600" align="center" cellpadding="0" cellspacing="0" style="background:#0f1c30;border-radius:16px;overflow:hidden;border:1px solid rgba(43,168,162,0.2);">
-        <!-- Header -->
-        <tr><td style="background:linear-gradient(135deg,#1E8C86,#2BA8A2);padding:20px 32px;">
-          <p style="margin:0;color:white;font-family:'Georgia',serif;font-size:22px;font-weight:bold;">${businessName}</p>
-        </td></tr>
-        <!-- Card image -->
-        ${cardUrl ? `<tr><td style="padding:0;"><img src="${cardUrl}" alt="Card" style="width:100%;display:block;max-height:280px;object-fit:cover;"></td></tr>` : ""}
-        <!-- Body -->
-        <tr><td style="padding:32px;">
-          <p style="margin:0;color:#f1f5f9;font-size:17px;line-height:1.7;font-family:Georgia,serif;">${body.replace(/\n/g, "<br>")}</p>
-          <p style="margin:28px 0 0;color:#2BA8A2;font-size:15px;font-weight:bold;">Warmly,<br>${fromName}</p>
-        </td></tr>
-        <!-- Footer -->
-        <tr><td style="padding:16px 32px;border-top:1px solid rgba(43,168,162,0.1);">
-          <p style="margin:0;color:rgba(148,163,184,0.5);font-size:11px;">
-            You received this because you're valued by ${businessName}.${postalAddress ? ` ${businessName}, ${postalAddress}.` : ""}
-            <a href="${unsubscribeUrl}" style="color:rgba(148,163,184,0.5);">Unsubscribe</a>
-          </p>
-        </td></tr>
-      </table>
-    </td></tr>
-  </table>
-</body>
-</html>`
 }

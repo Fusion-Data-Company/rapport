@@ -2,30 +2,36 @@
  * Outbound email, behind one interface.
  *
  * Resolution order for a tenant:
- *   1. The tenant's own SMTP mailbox (tenant_email_config.provider = "smtp") —
- *      Google Workspace, Microsoft 365, Zoho, anything. Mail leaves from the rep's
- *      real address, which is what the recipient expects from a personal note.
- *   2. The platform mailbox, when SMTP_URL is set on the deployment
+ *   1. The tenant's OAuth mailbox (provider "google" or "microsoft"). Mail is handed
+ *      to the Gmail API or Microsoft Graph on the rep's own send-only grant, so it
+ *      lands in the recipient's inbox as a normal message from a real person and
+ *      shows up in the rep's own Sent folder. No app passwords anywhere.
+ *   2. The tenant's own SMTP mailbox (provider "smtp") - Zoho, a host's mail server,
+ *      anything the two OAuth providers do not cover.
+ *   3. The platform mailbox, when SMTP_URL is set on the deployment
  *      (smtp://user:pass@host:port). This is the fallback for trials that have not
  *      connected a mailbox yet.
- *   3. No driver: the send is refused with a clear message and the scheduled send
+ *   4. No driver: the send is refused with a clear message and the scheduled send
  *      is marked failed, never silently "sent".
  *
- * To add a vendor later (SES, Postmark, SendGrid…) implement `MailDriver` and
- * return it from `resolveDriver`. Nothing else in the app knows how mail moves.
+ * To add a vendor later implement `MailDriver` and return it from `resolveDriver`.
+ * Nothing else in the app knows how mail moves.
  */
 import nodemailer from "nodemailer"
+import MailComposer from "nodemailer/lib/mail-composer"
 import type SMTPTransport from "nodemailer/lib/smtp-transport"
 import { db, tenantEmailConfig } from "@/lib/db"
 import { eq } from "drizzle-orm"
 import { open } from "@/lib/crypto"
+import { refreshAccessToken, type OAuthProvider } from "@/lib/oauth"
 
 export type MailMessage = {
   from: string
   to: string
   subject: string
-  html: string
-  text?: string
+  /** Optional: a plain-text-only note is the default, because that is what a real person sends. */
+  html?: string
+  text: string
   unsubscribeUrl?: string
 }
 
@@ -71,7 +77,69 @@ export const noopDriver: MailDriver = {
 
 export type TenantEmailConfigRow = typeof tenantEmailConfig.$inferSelect
 
+/** RFC 822 bytes for a message, built once and handed to whichever API wants them. */
+async function rawMessage(msg: MailMessage): Promise<Buffer> {
+  return new MailComposer({
+    from: msg.from,
+    to: msg.to,
+    subject: msg.subject,
+    text: msg.text,
+    ...(msg.html ? { html: msg.html } : {}),
+    headers: headersFor(msg),
+  }).compile().build()
+}
+
+/** Gmail API. Scope is gmail.send: Rapport can send as the user and can read nothing. */
+export function gmailDriver(refreshToken: string): MailDriver {
+  return {
+    name: "gmail-oauth",
+    async send(msg) {
+      const { accessToken } = await refreshAccessToken("google", refreshToken)
+      const raw = (await rawMessage(msg)).toString("base64url")
+      const res = await fetch("https://gmail.googleapis.com/gmail/v1/users/me/messages/send", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ raw }),
+      })
+      if (!res.ok) throw new Error(`Gmail refused the send (${res.status}): ${(await res.text()).slice(0, 300)}`)
+      const json = (await res.json()) as { id?: string }
+      return { id: json.id }
+    },
+  }
+}
+
+/** Microsoft Graph sendMail. Scope is Mail.Send; the note lands in the user's Sent Items. */
+export function microsoftDriver(refreshToken: string): MailDriver {
+  return {
+    name: "microsoft-oauth",
+    async send(msg) {
+      const { accessToken } = await refreshAccessToken("microsoft", refreshToken)
+      const raw = (await rawMessage(msg)).toString("base64")
+      // Graph accepts a MIME message directly, which keeps the List-Unsubscribe
+      // headers and the exact body we built for every other driver.
+      const res = await fetch("https://graph.microsoft.com/v1.0/me/sendMail", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "text/plain" },
+        body: raw,
+      })
+      if (!res.ok) throw new Error(`Microsoft refused the send (${res.status}): ${(await res.text()).slice(0, 300)}`)
+      return {}
+    },
+  }
+}
+
+export function oauthDriverFromConfig(cfg: TenantEmailConfigRow | null | undefined): MailDriver | null {
+  if (!cfg?.oauthRefreshTokenEncrypted) return null
+  const provider = cfg.provider as OAuthProvider
+  if (provider !== "google" && provider !== "microsoft") return null
+  const token = open(cfg.oauthRefreshTokenEncrypted)
+  if (!token) return null
+  return provider === "google" ? gmailDriver(token) : microsoftDriver(token)
+}
+
 export function driverFromConfig(cfg: TenantEmailConfigRow | null | undefined): MailDriver | null {
+  const oauth = oauthDriverFromConfig(cfg)
+  if (oauth) return oauth
   if (cfg?.provider === "smtp" && cfg.smtpHost && cfg.smtpUsername && cfg.smtpPasswordEncrypted) {
     const port = cfg.smtpPort ?? 587
     return smtpDriver({
@@ -80,6 +148,20 @@ export function driverFromConfig(cfg: TenantEmailConfigRow | null | undefined): 
     }, "tenant-smtp")
   }
   return null
+}
+
+/** How the connected mailbox is described in the UI and the send log. */
+export function mailboxSummary(cfg: TenantEmailConfigRow | null | undefined): {
+  kind: "google" | "microsoft" | "smtp" | "none"
+  address: string | null
+} {
+  if (cfg?.oauthRefreshTokenEncrypted && (cfg.provider === "google" || cfg.provider === "microsoft")) {
+    return { kind: cfg.provider, address: cfg.oauthEmail ?? null }
+  }
+  if (cfg?.provider === "smtp" && cfg.smtpHost && cfg.smtpUsername && cfg.smtpPasswordEncrypted) {
+    return { kind: "smtp", address: cfg.smtpUsername }
+  }
+  return { kind: "none", address: null }
 }
 
 export function platformDriver(): MailDriver | null {

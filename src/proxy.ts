@@ -17,9 +17,11 @@ const isPublicRoute = createRouteMatcher([
   "/api/cron(.*)",
   "/api/unsubscribe(.*)",
   "/api/onboarding(.*)",
+  // The OAuth start and callback routes check the Clerk session (start) and a signed
+  // state parameter (callback) themselves; the provider's redirect must reach them.
+  "/api/oauth(.*)",
 ])
 
-const isOnboarding = createRouteMatcher(["/onboarding"])
 const isMarketing = createRouteMatcher(["/", "/pricing", "/terms", "/privacy", "/refunds"])
 
 export default clerkMiddleware(async (auth, req) => {

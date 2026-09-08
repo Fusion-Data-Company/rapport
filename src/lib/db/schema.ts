@@ -271,7 +271,9 @@ export const sportsNotificationsSent = pgTable("sports_notifications_sent", {
 export const tenantEmailConfig = pgTable("tenant_email_config", {
   id: uuid("id").primaryKey().defaultRandom(),
   tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
-  provider: text("provider").notNull().default("resend"),
+  // "google" and "microsoft" send through the provider API on an OAuth refresh token.
+  // "smtp" is the fallback for every other mailbox.
+  provider: text("provider").notNull().default("smtp"),
   apiKeyEncrypted: text("api_key_encrypted"),
   gmailRefreshToken: text("gmail_refresh_token"),
   smtpHost: text("smtp_host"),
@@ -279,6 +281,27 @@ export const tenantEmailConfig = pgTable("tenant_email_config", {
   smtpUsername: text("smtp_username"),
   smtpPasswordEncrypted: text("smtp_password_encrypted"),
   isVerified: boolean("is_verified").notNull().default(false),
+
+  // OAuth mailbox (Gmail API / Microsoft Graph). Only the refresh token is stored, sealed.
+  oauthEmail: text("oauth_email"),
+  oauthRefreshTokenEncrypted: text("oauth_refresh_token_encrypted"),
+  oauthScope: text("oauth_scope"),
+  oauthConnectedAt: timestamp("oauth_connected_at", { withTimezone: true }),
+
+  // Deliverability guardrails
+  dailyCap: integer("daily_cap").notNull().default(40),
+  warmupStartedAt: timestamp("warmup_started_at", { withTimezone: true }),
+  // "plain" sends a text-only note, which is what a personal email from a real
+  // person looks like. "card" adds the branded HTML with the card image.
+  bodyStyle: text("body_style").notNull().default("plain"),
+
+  // Last DNS check for the sending domain: "pass" | "warn" | "fail" | null
+  spfStatus: text("spf_status"),
+  dkimStatus: text("dkim_status"),
+  dmarcStatus: text("dmarc_status"),
+  dnsDetail: jsonb("dns_detail"),
+  dnsCheckedAt: timestamp("dns_checked_at", { withTimezone: true }),
+
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 }, (t) => ({
   tenantIdx: uniqueIndex("tenant_email_config_tenant_idx").on(t.tenantId),

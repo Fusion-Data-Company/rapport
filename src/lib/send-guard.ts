@@ -3,20 +3,13 @@
  * first-day approval gate so a fresh account never fires a batch nobody looked at.
  */
 import { db, scheduledSends, tenants } from "@/lib/db"
-import { and, eq, inArray, sql } from "drizzle-orm"
+import { and, eq, inArray } from "drizzle-orm"
 import { hasAccess } from "@/lib/billing"
+import { ensureSchema } from "@/lib/db/ensure"
 
-let guardEnsured = false
-
-/** Unique index on the natural key. Idempotent; runs once per process. */
+/** Unique index on the natural key, plus every other column this build needs. */
 export async function ensureSendGuard() {
-  if (guardEnsured) return
-  await db.execute(sql`
-    create unique index if not exists scheduled_sends_once_per_day
-      on scheduled_sends (tenant_id, contact_id, occasion_type, scheduled_date)
-  `)
-  await db.execute(sql`alter table tenants add column if not exists postal_address text`)
-  guardEnsured = true
+  await ensureSchema()
 }
 
 /** Insert the pending row first. Returns the id, or null when today's row already exists. */
