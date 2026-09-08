@@ -77,6 +77,46 @@ export default function CardsPage() {
           onChange={e => Array.from(e.target.files ?? []).forEach(f => uploadMutation.mutate(f))} />
       </div>
 
+      {/* What runtime generation does with the sender's own line. Both of these were
+          made by the same prompt the send path builds - same brief, different name and
+          a different line from the sender - so the gallery is not describing a feature,
+          it is showing two of its outputs. */}
+      <GlassCard className="p-4 sm:p-5 mb-6">
+        <div className="flex flex-col sm:flex-row gap-5 items-start">
+          <div className="flex gap-3 shrink-0">
+            <figure className="w-24 sm:w-28">
+              <img src="/img/cards/examples/runtime-rob.jpg" alt="Happy Birthday, Rob"
+                className="w-full rounded-lg border border-[var(--surface-border)] shadow-[var(--shadow-md)] bg-white" />
+              <figcaption className="mt-1.5 text-[10px] text-[var(--text-muted)] leading-tight">
+                &ldquo;he just got a golden retriever puppy&rdquo;
+              </figcaption>
+            </figure>
+            <figure className="w-24 sm:w-28">
+              <img src="/img/cards/examples/runtime-maddie.jpg" alt="Happy Birthday, Maddie"
+                className="w-full rounded-lg border border-[var(--surface-border)] shadow-[var(--shadow-md)] bg-white" />
+              <figcaption className="mt-1.5 text-[10px] text-[var(--text-muted)] leading-tight">
+                &ldquo;turning seven and mad about horses&rdquo;
+              </figcaption>
+            </figure>
+          </div>
+          <div className="min-w-0">
+            <p className="text-[10px] uppercase tracking-[0.18em] text-[var(--gold)] font-semibold">
+              Made for the person
+            </p>
+            <h2 className="text-white font-semibold mt-1" style={{ fontFamily: "'Playfair Display', serif" }}>
+              The name is printed on the card, not typed under it
+            </h2>
+            <p className="text-sm text-[var(--text-secondary)] mt-1.5 leading-relaxed">
+              Every note carries a card set for that contact, in foil script on cardstock.
+              Add a line about them on the Schedule page before you approve and it goes into
+              the brief - look at the puppy in the wreath and the horseshoe in the confetti.
+              Until generation is switched on for your account, the Rapport card below for
+              the occasion goes out instead, and it still carries a name.
+            </p>
+          </div>
+        </div>
+      </GlassCard>
+
       {/* Occasion tabs */}
       <div className="flex flex-wrap gap-2 mb-6">
         {OCCASIONS.map(({ type, label, icon: Icon, color }) => (
