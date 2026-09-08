@@ -80,7 +80,7 @@ export default function OnboardingPage() {
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-5">
               <div>
                 <h2 className="text-xl font-bold text-white mb-1" style={{ fontFamily: "'Playfair Display', serif" }}>
-                  You're almost ready
+                  You&rsquo;re almost ready
                 </h2>
                 <p className="text-sm text-[var(--text-muted)]">Review your setup and launch Rapport</p>
               </div>

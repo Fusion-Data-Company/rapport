@@ -6,7 +6,9 @@ import { FacebookIcon, LinkedInIcon, InstagramIcon, TikTokIcon, XIcon } from "@/
 import { GlassButton } from "@/components/ui/glass-button"
 import { GlassInput } from "@/components/ui/glass-input"
 import { cn, formatDate, getInitials } from "@/lib/utils"
-type Contact = any
+import type { ContactWithRelations } from "@/lib/types"
+
+type Contact = ContactWithRelations
 
 interface Props {
   contact: Contact
@@ -100,7 +102,7 @@ export default function ContactSlidePanel({ contact, onClose, onUpdate }: Props)
           <div>
             <h2 className="font-bold text-white text-h2" style={{ fontFamily: "'Playfair Display', serif", fontSize: "18px" }}>
               {contact.firstName} {contact.lastName ?? ""}
-              {contact.nickname && <span className="text-sm font-normal text-[var(--text-muted)] ml-1">"{contact.nickname}"</span>}
+              {contact.nickname && <span className="text-sm font-normal text-[var(--text-muted)] ml-1">&ldquo;{contact.nickname}&rdquo;</span>}
             </h2>
             {contact.jobTitle && <p className="text-sm text-[var(--teal-light)]">{contact.jobTitle}{contact.companyName && ` · ${contact.companyName}`}</p>}
           </div>

@@ -25,14 +25,18 @@ const LEAGUES = [
   { sport: "basketball", league: "mens-college-basketball", label: "CBB" },
 ] as const
 
-export async function fetchCompletedGames(dateStr?: string): Promise<{
-  sport: string; league: string; label: string;
+export type CompletedGame = {
+  sport: string; league: string;
   homeTeamName: string; homeTeamId: string; awayTeamName: string; awayTeamId: string;
   homeScore: number; awayScore: number; winnerTeamId: string; winnerTeamName: string;
   gameDate: string; espnEventId: string;
-}[]> {
+}
+
+type Competitor = ESPNGame["competitions"][number]["competitors"][number] & { homeAway?: string }
+
+export async function fetchCompletedGames(dateStr?: string): Promise<CompletedGame[]> {
   const today = dateStr ?? new Date().toISOString().split("T")[0].replace(/-/g, "")
-  const results: any[] = []
+  const results: CompletedGame[] = []
 
   for (const { sport, league, label } of LEAGUES) {
     try {
@@ -49,7 +53,7 @@ export async function fetchCompletedGames(dateStr?: string): Promise<{
         const comp = event.competitions?.[0]
         if (!comp?.competitors?.length) continue
 
-        const [team1, team2] = comp.competitors as any[]
+        const [team1, team2] = comp.competitors as Competitor[]
         const home = team1.homeAway === "home" ? team1 : team2
         const away = team1.homeAway === "away" ? team1 : team2
         const winner = comp.competitors.find(c => c.winner)

@@ -6,6 +6,7 @@ import { GlassCard } from "@/components/ui/glass-card"
 import { GlassButton } from "@/components/ui/glass-button"
 import { Upload, CreditCard, Cake, Heart, Baby, Smile, Trophy, X, Plus, Eye } from "lucide-react"
 import { cn } from "@/lib/utils"
+import type { CardTemplateRow } from "@/lib/types"
 
 const OCCASIONS = [
   { type: "birthday",       label: "Birthday",       icon: Cake,    color: "var(--teal)" },
@@ -121,7 +122,7 @@ export default function CardsPage() {
       ) : (
         <motion.div layout className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
           <AnimatePresence>
-            {cards.map((card: any) => (
+            {cards.map((card: CardTemplateRow) => (
               <motion.div
                 key={card.id}
                 layout

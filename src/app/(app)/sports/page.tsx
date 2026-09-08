@@ -48,8 +48,8 @@ export default function SportsPage() {
           <h3 className="font-bold text-white text-sm">How Sports Monitoring Works</h3>
         </div>
         <div className="space-y-2 text-sm text-[var(--text-secondary)]">
-          <p>1. Rapport polls ESPN's public API 3× daily (8am, 2pm, 8pm PST)</p>
-          <p>2. Completed games are matched against your contacts' favorite teams</p>
+          <p>1. Rapport polls ESPN&rsquo;s public API 3× daily (8am, 2pm, 8pm PST)</p>
+          <p>2. Completed games are matched against your contacts&rsquo; favorite teams</p>
           <p>3. A personalized reaction email is queued for delivery next morning (8am)</p>
           <p>4. Rate limited to max 1 sports email per contact per 7 days</p>
         </div>
@@ -72,7 +72,7 @@ export default function SportsPage() {
       </div>
 
       <p className="text-[11px] text-[var(--text-muted)] mt-4 text-center">
-        To add team preferences to a contact, open their profile in the Contacts table and use Paige to say "Add [team name] as [first name]'s favorite team"
+        To add team preferences to a contact, open their profile in the Contacts table and use Paige to say &ldquo;Add [team name] as [first name]&rsquo;s favorite team&rdquo;
       </p>
     </div>
   )

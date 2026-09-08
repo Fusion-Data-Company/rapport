@@ -5,11 +5,12 @@ import ContactsTable from "@/components/contacts/ContactsTable"
 import { AddContactDialog } from "@/components/contacts/AddContactDialog"
 import { GlassCard } from "@/components/ui/glass-card"
 import { Users, Upload, Plus } from "lucide-react"
+import type { ContactWithRelations } from "@/lib/types"
 
 async function fetchContacts() {
   const res = await fetch("/api/contacts")
   if (!res.ok) throw new Error("Failed to fetch contacts")
-  return res.json() as Promise<any[]>
+  return res.json() as Promise<ContactWithRelations[]>
 }
 
 async function updateContact(id: string, field: string, value: unknown) {
@@ -29,7 +30,7 @@ async function deleteContact(id: string) {
 
 export default function ContactsPage() {
   const qc = useQueryClient()
-  const { data: contacts = [], isLoading } = useQuery<any[]>({ queryKey: ["contacts"], queryFn: fetchContacts })
+  const { data: contacts = [], isLoading } = useQuery<ContactWithRelations[]>({ queryKey: ["contacts"], queryFn: fetchContacts })
   const [adding, setAdding] = useState(false)
 
   const updateMutation = useMutation({

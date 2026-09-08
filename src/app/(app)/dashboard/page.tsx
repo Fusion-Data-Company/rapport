@@ -4,6 +4,7 @@ import { motion } from "framer-motion"
 import { GlassCard } from "@/components/ui/glass-card"
 import { Mail, Users, TrendingUp, Heart, Calendar, CheckCircle, Clock, AlertTriangle, Activity } from "lucide-react"
 import { formatDate } from "@/lib/utils"
+import type { ScheduledSendView } from "@/lib/types"
 
 const STAGGER = { hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0 } }
 const CONTAINER = { hidden: {}, show: { transition: { staggerChildren: 0.07 } } }
@@ -84,7 +85,7 @@ export default function DashboardPage() {
               </div>
             ) : (
               <div className="space-y-2">
-                {todaySends.slice(0, 8).map((send: any) => (
+                {todaySends.slice(0, 8).map((send: ScheduledSendView) => (
                   <div key={send.id} className="flex items-center gap-3 p-3 rounded-xl bg-slate-900/50 hover:bg-slate-800/50 transition-colors">
                     <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[var(--teal-dark)] to-[var(--teal)] flex items-center justify-center text-[11px] font-bold text-white">
                       {send.contactFirstName?.[0]}{send.contactLastName?.[0]}
@@ -109,7 +110,7 @@ export default function DashboardPage() {
               <h3 className="font-bold text-white text-sm">Coming Up</h3>
             </div>
             <div className="space-y-2">
-              {upcoming.slice(0, 10).map((item: any) => (
+              {upcoming.slice(0, 10).map((item: ScheduledSendView) => (
                 <div key={item.id} className="flex items-start gap-2.5 py-2 border-b border-[var(--surface-border)] last:border-0">
                   <div className="w-9 h-9 rounded-lg bg-slate-900/60 flex flex-col items-center justify-center shrink-0">
                     <span className="text-[9px] font-bold uppercase text-[var(--teal)]">

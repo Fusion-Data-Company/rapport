@@ -19,7 +19,9 @@ import { GlassButton } from "@/components/ui/glass-button"
 import { GlassInput } from "@/components/ui/glass-input"
 import ContactSlidePanel from "./ContactSlidePanel"
 import { cn, getInitials, formatDate } from "@/lib/utils"
-type Contact = any
+import type { ContactWithRelations } from "@/lib/types"
+
+type Contact = ContactWithRelations
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -103,7 +105,7 @@ function buildColumns(onUpdate: (id: string, field: string, value: unknown) => v
               {row.original.firstName} {row.original.lastName ?? ""}
             </p>
             {row.original.nickname && (
-              <p className="text-[11px] text-[var(--text-muted)] truncate">"{row.original.nickname}"</p>
+              <p className="text-[11px] text-[var(--text-muted)] truncate">&ldquo;{row.original.nickname}&rdquo;</p>
             )}
           </div>
         </div>

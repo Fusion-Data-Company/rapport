@@ -91,7 +91,7 @@ export default function ImportPage() {
     <div className="p-6 max-w-3xl mx-auto">
       <div className="mb-6">
         <h1 className="text-h1 text-white mb-1" style={{ fontFamily: "'Playfair Display', serif" }}>Import Contacts</h1>
-        <p className="text-sm text-[var(--text-muted)]">Upload a CSV or spreadsheet — we'll map the columns automatically</p>
+        <p className="text-sm text-[var(--text-muted)]">Upload a CSV or spreadsheet — we&rsquo;ll map the columns automatically</p>
       </div>
 
       <AnimatePresence mode="wait">

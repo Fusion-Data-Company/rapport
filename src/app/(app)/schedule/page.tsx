@@ -4,6 +4,7 @@ import { GlassButton } from "@/components/ui/glass-button"
 import { GlassCard } from "@/components/ui/glass-card"
 import { Calendar, Mail } from "lucide-react"
 import { formatDate } from "@/lib/utils"
+import type { ScheduledSendView } from "@/lib/types"
 
 const OCCASION_COLORS: Record<string, string> = {
   birthday: "var(--teal)", anniversary: "var(--coral)", child_birthday: "var(--sky)",
@@ -50,7 +51,7 @@ export default function SchedulePage() {
         </GlassCard>
       ) : (
         <div className="space-y-2">
-          {upcoming.map((send: any) => (
+          {upcoming.map((send: ScheduledSendView) => (
             <GlassCard key={send.id} className="p-4 flex items-center gap-4 hover:border-[var(--surface-border-hover)] transition-colors">
               <div className="w-12 h-12 rounded-xl bg-slate-900/60 flex flex-col items-center justify-center shrink-0">
                 <span className="text-[9px] font-bold uppercase" style={{ color: OCCASION_COLORS[send.occasionType] ?? "var(--teal)" }}>
