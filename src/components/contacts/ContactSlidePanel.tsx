@@ -2,12 +2,13 @@
 import { useState } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { motion } from "framer-motion"
-import { X, Edit2, Save, Mail, Phone, Heart, Star, Briefcase, Dumbbell, Globe, CalendarClock, Plus, Trash2 } from "lucide-react"
+import { X, Edit2, Save, Mail, Phone, Heart, Star, Briefcase, Dumbbell, Globe, CalendarClock, Plus, Trash2, History, Send, MessageSquare, PhoneCall, Users } from "lucide-react"
 import { FacebookIcon, LinkedInIcon, InstagramIcon, TikTokIcon, XIcon } from "@/components/ui/social-icons"
 import { GlassButton } from "@/components/ui/glass-button"
 import { GlassInput } from "@/components/ui/glass-input"
 import { cn, formatDate, getInitials } from "@/lib/utils"
-import type { ContactDateRow, ContactWithRelations } from "@/lib/types"
+import type { ContactDateRow, ContactTimelineRow, ContactWithRelations } from "@/lib/types"
+import { KIND_LABEL, TIMELINE_KINDS, type TimelineKind } from "@/lib/timeline-kinds"
 
 type Contact = ContactWithRelations
 
@@ -17,7 +18,7 @@ interface Props {
   onUpdate: (id: string, field: string, value: unknown) => Promise<void>
 }
 
-type Section = "overview" | "dates" | "family" | "business" | "lifestyle" | "notes"
+type Section = "overview" | "dates" | "history" | "family" | "business" | "lifestyle" | "notes"
 
 function Section({ title, icon: Icon, children }: { title: string; icon: React.ElementType; children: React.ReactNode }) {
   return (
@@ -152,9 +153,128 @@ function CustomDates({ contactId, seeded }: { contactId: string; seeded?: Contac
   )
 }
 
+
+const KIND_ICON: Record<TimelineKind, React.ElementType> = {
+  note: Edit2, sent: Send, reply: MessageSquare, call: PhoneCall, meeting: Users,
+}
+
+/**
+ * What actually happened. The writer reads the last five entries before it drafts,
+ * so a note can pick up the real last conversation instead of the static profile.
+ */
+function Timeline({ contactId }: { contactId: string }) {
+  const qc = useQueryClient()
+  const key = ["contact-timeline", contactId]
+  const { data = [], isLoading, isError } = useQuery<ContactTimelineRow[]>({
+    queryKey: key,
+    queryFn: () => fetch(`/api/contacts/${contactId}/timeline`).then(r => r.json()),
+  })
+  const [kind, setKind] = useState<TimelineKind>("note")
+  const [body, setBody] = useState("")
+  const [error, setError] = useState<string | null>(null)
+
+  const add = useMutation({
+    mutationFn: async () => {
+      const r = await fetch(`/api/contacts/${contactId}/timeline`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ kind, body }),
+      })
+      const d = await r.json()
+      if (!r.ok) throw new Error(d.error ?? "Could not save that")
+      return d
+    },
+    onSuccess: () => { setBody(""); setError(null); qc.invalidateQueries({ queryKey: key }) },
+    onError: (e: Error) => setError(e.message),
+  })
+
+  const remove = useMutation({
+    mutationFn: (id: string) => fetch(`/api/contacts/${contactId}/timeline/${id}`, { method: "DELETE" }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: key }),
+  })
+
+  return (
+    <div className="space-y-3">
+      <div className="space-y-2">
+        <div className="flex flex-wrap gap-1.5">
+          {TIMELINE_KINDS.filter(k => k !== "sent").map((k) => (
+            <button
+              key={k}
+              type="button"
+              onClick={() => setKind(k)}
+              className={cn(
+                "px-2.5 py-1 rounded-full border text-[11px] font-semibold transition-colors",
+                kind === k
+                  ? "border-[var(--teal)] bg-[rgba(43,168,162,0.12)] text-[var(--teal-light)]"
+                  : "border-[var(--surface-border)] text-[var(--text-muted)] hover:text-white"
+              )}
+            >{KIND_LABEL[k]}</button>
+          ))}
+        </div>
+        <textarea
+          value={body}
+          onChange={e => setBody(e.target.value)}
+          rows={3}
+          placeholder={kind === "reply" ? "Paste what they wrote back" : kind === "call" ? "What did you talk about?" : "What happened?"}
+          className="input-premium text-sm w-full resize-none"
+        />
+        <GlassButton size="sm" disabled={!body.trim()} loading={add.isPending} onClick={() => { setError(null); add.mutate() }}>
+          <Plus className="w-3.5 h-3.5" /> Add to history
+        </GlassButton>
+        {error && <p className="text-xs text-[var(--coral)]">{error}</p>}
+      </div>
+
+      <div className="pt-3 border-t border-[var(--surface-border)] space-y-3">
+        {isLoading && <p className="text-xs text-[var(--text-muted)]">Loading history</p>}
+        {isError && <p className="text-xs text-[var(--coral)]">Could not load the history. Reload the page.</p>}
+        {!isLoading && !isError && data.length === 0 && (
+          <p className="text-xs text-[var(--text-muted)] italic">
+            Nothing logged yet. Every note Rapport sends lands here on its own, and anything you add is read by the writer before the next one.
+          </p>
+        )}
+        {data.map((entry, i) => {
+          const Icon = KIND_ICON[entry.kind as TimelineKind] ?? Edit2
+          return (
+            <div key={entry.id} className="flex gap-2.5 group">
+              <div className="flex flex-col items-center shrink-0">
+                <div className={cn(
+                  "w-6 h-6 rounded-full flex items-center justify-center",
+                  entry.kind === "sent" ? "bg-[rgba(43,168,162,0.15)]" : "bg-slate-800"
+                )}>
+                  <Icon className={cn("w-3 h-3", entry.kind === "sent" ? "text-[var(--teal)]" : "text-[var(--text-muted)]")} />
+                </div>
+                {i < data.length - 1 && <div className="w-px flex-1 bg-[var(--surface-border)] mt-1" />}
+              </div>
+              <div className="min-w-0 flex-1 pb-1">
+                <div className="flex items-baseline gap-2">
+                  <p className="text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">
+                    {KIND_LABEL[entry.kind as TimelineKind] ?? entry.kind}
+                  </p>
+                  <p className="text-[11px] text-[var(--text-muted)]">{formatDate(entry.occurredAt)}</p>
+                  {i < 5 && <span className="text-[10px] text-[var(--teal)]">read by the writer</span>}
+                </div>
+                {entry.summary && <p className="text-sm text-white truncate">{entry.summary}</p>}
+                <p className="text-sm text-[var(--text-secondary)] whitespace-pre-wrap break-words">{entry.body}</p>
+              </div>
+              <button
+                type="button"
+                aria-label="Remove entry"
+                onClick={() => remove.mutate(entry.id)}
+                className="text-[var(--text-muted)] hover:text-[var(--coral)] opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 const SECTIONS: { key: Section; label: string; icon: React.ElementType }[] = [
   { key: "overview",  label: "Overview",  icon: Star },
   { key: "dates",     label: "Dates",     icon: CalendarClock },
+  { key: "history",   label: "History",   icon: History },
   { key: "family",    label: "Family",    icon: Heart },
   { key: "business",  label: "Business",  icon: Briefcase },
   { key: "lifestyle", label: "Lifestyle", icon: Dumbbell },
@@ -231,13 +351,13 @@ export default function ContactSlidePanel({ contact, onClose, onUpdate }: Props)
       </div>
 
       {/* Section tabs */}
-      <div className="flex border-b border-[var(--surface-border)] shrink-0">
+      <div className="flex border-b border-[var(--surface-border)] shrink-0 overflow-x-auto">
         {SECTIONS.map(({ key, label, icon: Icon }) => (
           <button
             key={key}
             onClick={() => setActiveSection(key)}
             className={cn(
-              "flex items-center gap-1.5 px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wider border-b-2 transition-colors",
+              "flex items-center gap-1.5 px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wider border-b-2 transition-colors whitespace-nowrap",
               activeSection === key
                 ? "border-[var(--teal)] text-[var(--teal-light)]"
                 : "border-transparent text-[var(--text-muted)] hover:text-white"
@@ -289,6 +409,12 @@ export default function ContactSlidePanel({ contact, onClose, onUpdate }: Props)
               <CustomDates contactId={contact.id} seeded={contact.customDates} />
             </Section>
           </>
+        )}
+
+        {activeSection === "history" && (
+          <Section title="Interaction history" icon={History}>
+            <Timeline contactId={contact.id} />
+          </Section>
         )}
 
         {activeSection === "family" && (

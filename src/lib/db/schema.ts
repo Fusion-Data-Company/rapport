@@ -216,6 +216,31 @@ export const contactDates = pgTable("contact_dates", {
   tenantIdx: index("contact_dates_tenant_idx").on(t.tenantId),
 }))
 
+/**
+ * What actually happened with this contact: notes the agent typed, notes Rapport
+ * sent, replies pasted back in, calls and meetings. The writer reads the last few
+ * entries so a note can reference the real last conversation instead of guessing
+ * from a static profile.
+ */
+export const contactTimeline = pgTable("contact_timeline", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  contactId: uuid("contact_id").notNull().references(() => contacts.id, { onDelete: "cascade" }),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
+  /** "note" | "sent" | "reply" | "call" | "meeting" */
+  kind: text("kind").notNull().default("note"),
+  /** Short headline: the subject of a note, or the first line of a call log. */
+  summary: text("summary"),
+  body: text("body").notNull(),
+  occurredAt: timestamp("occurred_at", { withTimezone: true }).notNull().defaultNow(),
+  /** "manual" when a person typed it, "rapport" when the app wrote it. */
+  source: text("source").notNull().default("manual"),
+  scheduledSendId: uuid("scheduled_send_id"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (t) => ({
+  contactIdx: index("contact_timeline_contact_idx").on(t.contactId, t.occurredAt),
+  tenantIdx: index("contact_timeline_tenant_idx").on(t.tenantId),
+}))
+
 export const contactSportsTeams = pgTable("contact_sports_teams", {
   id: uuid("id").primaryKey().defaultRandom(),
   contactId: uuid("contact_id").notNull().references(() => contacts.id, { onDelete: "cascade" }),
@@ -406,7 +431,12 @@ export const contactsRelations = relations(contacts, ({ one, many }) => ({
   children: many(contactChildren),
   sportsTeams: many(contactSportsTeams),
   customDates: many(contactDates),
+  timeline: many(contactTimeline),
   scheduledSends: many(scheduledSends),
+}))
+
+export const contactTimelineRelations = relations(contactTimeline, ({ one }) => ({
+  contact: one(contacts, { fields: [contactTimeline.contactId], references: [contacts.id] }),
 }))
 
 export const contactDatesRelations = relations(contactDates, ({ one }) => ({

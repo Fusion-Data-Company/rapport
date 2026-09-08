@@ -33,6 +33,8 @@ export async function generateEmailContent(opts: {
   businessName: string
   /** The person signing the note, when that is not the business name. */
   senderName?: string
+  /** The last few things that actually happened with this contact, oldest first. */
+  history?: string | null
   sensitiveTopics?: string | null
   llmConfig: LLMConfig
 }): Promise<{ subject: string; body: string }> {
@@ -49,12 +51,19 @@ export async function generateEmailContent(opts: {
 
   const signer = opts.senderName?.trim() || opts.businessName
 
+  const historyBlock = opts.history
+    ? `\nWhat has actually happened between you, oldest first. Prefer this over the profile: a
+line that picks up the real last conversation is the whole point. Do not repeat a note
+you already sent, and do not quote their reply back at them.
+${opts.history}\n`
+    : ""
+
   const prompt = `You are ${signer} at "${opts.businessName}", writing one short personal email to ${opts.contactFirstName}.
 
 Why you are writing today:
 ${opts.occasionPrompt ?? opts.occasion}
-
-What you know about ${opts.contactFirstName} (reference at most ONE of these, and only if it fits):
+${historyBlock}
+What you know about ${opts.contactFirstName} (fall back to at most ONE of these, and only if it fits):
 ${contextLines || "- Nothing beyond their name"}
 ${sensitiveNote}
 

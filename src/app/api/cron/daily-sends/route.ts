@@ -12,6 +12,7 @@ import { buildNote, type BodyStyle } from "@/lib/email-body"
 import { capState } from "@/lib/send-caps"
 import { addDays, addMonths, todayISO, type ISODate } from "@/lib/dates"
 import { milestoneMonthsFor, occasionsForDay, renewalLeadDaysFor, type ContactForOccasions, type DueOccasion } from "@/lib/occasions"
+import { formatHistory, recentTimeline, recordTimeline } from "@/lib/timeline"
 
 export const runtime = "nodejs"
 export const maxDuration = 300
@@ -113,6 +114,7 @@ export async function GET(req: Request) {
         if (!sendId) continue // already handled today
 
         try {
+          const history = formatHistory(await recentTimeline(contact.id))
           const { subject, body } = await generateEmailContent({
             occasion: occasion.label,
             occasionPrompt: occasion.prompt,
@@ -128,6 +130,7 @@ export async function GET(req: Request) {
             },
             businessName: tenant.businessName,
             senderName: tenant.fromName,
+            history,
             sensitiveTopics: contact.sensitiveTopics,
             llmConfig: llm,
           })
@@ -231,4 +234,9 @@ async function deliver({ sendId, tenant, contact, subject, body, cardUrl, style 
     tenantId: tenant.id, contactId: contact.id, scheduledSendId: sendId, eventType: "sent",
     metadata: { providerMessageId: result?.id ?? null },
   }).catch(() => undefined)
+  // The note becomes history, so tomorrow's note knows what yesterday's said.
+  await recordTimeline({
+    tenantId: tenant.id, contactId: contact.id, kind: "sent",
+    summary: subject, body, source: "rapport", scheduledSendId: sendId,
+  })
 }

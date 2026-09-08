@@ -67,6 +67,24 @@ async function run() {
   await db.execute(sql`create index if not exists contact_dates_tenant_idx on contact_dates (tenant_id)`)
   await db.execute(sql`create index if not exists contacts_policy_renewal_idx on contacts (tenant_id, policy_renewal_date)`)
   await db.execute(sql`create index if not exists contacts_loan_closed_idx on contacts (tenant_id, loan_closed_date)`)
+
+  // 0005 - per-contact interaction timeline
+  await db.execute(sql`
+    create table if not exists contact_timeline (
+      id uuid primary key default gen_random_uuid(),
+      contact_id uuid not null references contacts(id) on delete cascade,
+      tenant_id uuid not null references tenants(id) on delete cascade,
+      kind text not null default 'note',
+      summary text,
+      body text not null,
+      occurred_at timestamptz not null default now(),
+      source text not null default 'manual',
+      scheduled_send_id uuid,
+      created_at timestamp not null default now()
+    )
+  `)
+  await db.execute(sql`create index if not exists contact_timeline_contact_idx on contact_timeline (contact_id, occurred_at)`)
+  await db.execute(sql`create index if not exists contact_timeline_tenant_idx on contact_timeline (tenant_id)`)
 }
 
 /** Runs the top-up once per process. Safe to await from any request path. */
