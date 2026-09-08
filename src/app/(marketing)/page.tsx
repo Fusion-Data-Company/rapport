@@ -32,6 +32,11 @@ const css = `
 .rp .shot .body{padding:16px}
 .rp .note{font-family:Georgia,serif;font-size:14.5px;line-height:1.7;color:#e2e8f0;white-space:pre-line}
 .rp .chip{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:999px;border:1px solid var(--line);font-size:12.5px;font-weight:600;color:var(--dim)}
+.rp .heroshot{margin:0;border-radius:20px;overflow:hidden;border:1px solid var(--line);background:var(--card);box-shadow:0 24px 70px rgba(0,0,0,.5)}
+.rp .heroshot img{display:block;width:100%;height:auto}
+.rp .heroshot figcaption{padding:14px 20px;font-size:13.5px;color:var(--dim);border-top:1px solid var(--line);font-family:Georgia,serif;font-style:italic}
+.rp .flowshot{margin:22px 0 6px;border-radius:16px;overflow:hidden;border:1px solid var(--line);background:#0a1420}
+.rp .flowshot img{display:block;width:100%;height:auto}
 .rp .step b{display:block;font-size:26px;color:var(--teal3);font-family:'Playfair Display',serif;margin-bottom:6px}
 .rp .faq p{color:var(--dim);font-size:14px;line-height:1.6;margin:4px 0 0}
 .rp .faq h4{margin:0;font-size:15px;color:#fff}
@@ -247,10 +252,22 @@ export default function HomePage() {
         </div>
       </section>
 
+
+      {/* Hero image */}
+      <section className="wrap" style={{ paddingBottom: 8 }}>
+        <figure className="heroshot">
+          <img src="/img/hero-desk.jpg" alt="An agent's desk at the end of the day: the client book open, a note signed by hand, the calendar still up on the laptop." width={1600} height={893} />
+          <figcaption>The part of the job that keeps the book. Rapport does it on the days you are too busy to.</figcaption>
+        </figure>
+      </section>
+
       {/* How */}
       <section id="how" className="sec wrap" style={{ paddingTop: 0 }}>
         <span className="kick">How it works</span>
         <h2>Three things, then it runs itself</h2>
+        <figure className="flowshot">
+          <img src="/img/how-it-works.jpg" alt="Five steps: import your book, dates are watched, a note is drafted, you approve it, it is sent from your inbox." width={1600} height={575} />
+        </figure>
         <div className="grid3" style={{ marginTop: 24 }}>
           <div className="card step">
             <b>1</b><Upload size={20} color="#3CC4BD" />
