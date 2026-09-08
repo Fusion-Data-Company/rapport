@@ -30,6 +30,8 @@ export const tenants = pgTable("tenants", {
   tierAMinDays: integer("tier_a_min_days").notNull().default(0),
   tierBMinDays: integer("tier_b_min_days").notNull().default(21),
   tierCMinDays: integer("tier_c_min_days").notNull().default(75),
+  /** Path segment on the inbound URL an AMS, CRM or Zapier posts contacts to. */
+  inboundToken: text("inbound_token"),
   status: text("status").notNull().default("active"),
   // Billing (Stripe)
   stripeCustomerId: text("stripe_customer_id"),
@@ -409,6 +411,30 @@ export const agentSessions = pgTable("agent_sessions", {
   completedAt: timestamp("completed_at"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 })
+
+// ── Webhooks ─────────────────────────────────────────────────────────────────
+
+/**
+ * Where send events go when they leave Rapport. Payloads are flat enough for Zapier
+ * and signed so the receiver can prove they came from here.
+ */
+export const webhookEndpoints = pgTable("webhook_endpoints", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
+  url: text("url").notNull(),
+  /** Sealed with ENCRYPTION_KEY; shown to the agent once, at creation. */
+  secretEncrypted: text("secret_encrypted").notNull(),
+  description: text("description"),
+  events: text("events").array(),
+  isActive: boolean("is_active").notNull().default(true),
+  lastStatus: integer("last_status"),
+  lastError: text("last_error"),
+  lastAttemptAt: timestamp("last_attempt_at", { withTimezone: true }),
+  consecutiveFailures: integer("consecutive_failures").notNull().default(0),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (t) => ({
+  tenantIdx: index("webhook_endpoints_tenant_idx").on(t.tenantId),
+}))
 
 // ── Send Log ──────────────────────────────────────────────────────────────────
 

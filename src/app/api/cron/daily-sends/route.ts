@@ -4,7 +4,8 @@ import { eq, and, or, inArray, sql } from "drizzle-orm"
 import { open } from "@/lib/crypto"
 import { claimSend, ensureSendGuard, tenantMaySend, tenantNeedsApproval } from "@/lib/send-guard"
 import { generateEmailContent, type LLMConfig } from "@/lib/llm"
-import { cardFor, deliver, deliverWrittenRow } from "@/lib/deliver"
+import { cardFor, deliver, deliverWrittenRow, notePayload } from "@/lib/deliver"
+import { dispatch } from "@/lib/webhooks"
 import type { BodyStyle } from "@/lib/email-body"
 import { capState } from "@/lib/send-caps"
 import { addDays, addMonths, todayISO, type ISODate } from "@/lib/dates"
@@ -132,6 +133,11 @@ export async function GET(req: Request) {
             await db.update(scheduledSends)
               .set({ status: "pending_approval", emailSubject: subject, emailBodyText: body, cardTemplateId: card?.id ?? null })
               .where(eq(scheduledSends.id, sendId))
+            await dispatch(tenant.id, "note.held", notePayload({
+              event: "note.held", tenant, contact, sendId,
+              occasionType: occasion.type, occasionLabel: occasion.label, scheduledDate: today,
+              subject, body,
+            }))
             held++
             continue
           }
@@ -143,7 +149,10 @@ export async function GET(req: Request) {
             continue
           }
 
-          await deliver({ sendId, tenant, contact, subject, body, cardUrl: card?.imageUrl, style })
+          await deliver({
+            sendId, tenant, contact, subject, body, cardUrl: card?.imageUrl, style,
+            occasionType: occasion.type, occasionLabel: occasion.label, scheduledDate: today,
+          })
           budget--
           processed++
         } catch (e) {

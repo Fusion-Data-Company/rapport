@@ -20,6 +20,9 @@ const isPublicRoute = createRouteMatcher([
   // The OAuth start and callback routes check the Clerk session (start) and a signed
   // state parameter (callback) themselves; the provider's redirect must reach them.
   "/api/oauth(.*)",
+  // Inbound contacts from an AMS, a CRM or Zapier. Authorised by the per-tenant
+  // token in the path, which is why it cannot sit behind a session check.
+  "/api/inbound(.*)",
 ])
 
 const isMarketing = createRouteMatcher(["/", "/pricing", "/terms", "/privacy", "/refunds"])

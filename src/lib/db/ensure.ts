@@ -95,6 +95,30 @@ async function run() {
       add column if not exists tier_b_min_days integer not null default 21,
       add column if not exists tier_c_min_days integer not null default 75
   `)
+
+  // 0007 - webhooks out, and the inbound token
+  await db.execute(sql`alter table tenants add column if not exists inbound_token text`)
+  await db.execute(sql`
+    create unique index if not exists tenants_inbound_token_idx
+      on tenants (inbound_token) where inbound_token is not null
+  `)
+  await db.execute(sql`
+    create table if not exists webhook_endpoints (
+      id uuid primary key default gen_random_uuid(),
+      tenant_id uuid not null references tenants(id) on delete cascade,
+      url text not null,
+      secret_encrypted text not null,
+      description text,
+      events text[],
+      is_active boolean not null default true,
+      last_status integer,
+      last_error text,
+      last_attempt_at timestamptz,
+      consecutive_failures integer not null default 0,
+      created_at timestamp not null default now()
+    )
+  `)
+  await db.execute(sql`create index if not exists webhook_endpoints_tenant_idx on webhook_endpoints (tenant_id)`)
 }
 
 /** Runs the top-up once per process. Safe to await from any request path. */
