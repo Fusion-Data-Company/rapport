@@ -46,7 +46,7 @@ export default function OnboardingPage() {
           </div>
           <div>
             <h1 className="text-xl font-bold text-white" style={{ fontFamily: "'Playfair Display', serif" }}>Rapport</h1>
-            <p className="text-xs text-[var(--text-muted)]">McKay 66 Relationship Engine</p>
+            <p className="text-xs text-[var(--text-muted)]">Relationship autopilot</p>
           </div>
         </div>
 

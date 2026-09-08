@@ -251,7 +251,7 @@ function buildColumns(onUpdate: (id: string, field: string, value: unknown) => v
       },
     },
 
-    // McKay 66 Section: Business background
+    // Profile: Business background
     { id: "businessObjective", accessorKey: "businessObjectiveLongRange", size: 200, header: "Long-Range Business Goal" },
     { id: "businessImmediate", accessorKey: "businessObjectiveImmediate", size: 200, header: "Immediate Business Goal" },
     { id: "greatestConcern", accessorKey: "greatestConcern", size: 200, header: "Greatest Concern" },
@@ -260,7 +260,7 @@ function buildColumns(onUpdate: (id: string, field: string, value: unknown) => v
     { id: "statusSymbols", accessorKey: "statusSymbols", size: 160, header: "Status Symbols" },
     { id: "prevEmployer1", accessorKey: "previousEmployer1", size: 160, header: "Prev. Employer" },
 
-    // McKay 66: Education
+    // Profile: Education
     { id: "highSchool", accessorKey: "highSchool", size: 140, header: "High School" },
     { id: "degrees", accessorKey: "degrees", size: 130, header: "Degrees" },
     { id: "collegeFraternity", accessorKey: "collegeFraternity", size: 150, header: "Fraternity / Sorority" },
@@ -268,12 +268,12 @@ function buildColumns(onUpdate: (id: string, field: string, value: unknown) => v
     { id: "military", accessorKey: "militaryService", size: 130, header: "Military" },
     { id: "militaryRank", accessorKey: "militaryRank", size: 120, header: "Mil. Rank" },
 
-    // McKay 66: Family
+    // Profile: Family
     { id: "spouseOccupation", accessorKey: "spouseOccupation", size: 150, header: "Spouse Occupation" },
     { id: "spouseEducation", accessorKey: "spouseEducation", size: 150, header: "Spouse Education" },
     { id: "spouseInterests", accessorKey: "spouseInterests", size: 160, header: "Spouse Interests" },
 
-    // McKay 66: Lifestyle / Personal
+    // Profile: Lifestyle / Personal
     { id: "medicalHistory", accessorKey: "medicalHistory", size: 180, header: "Health Notes" },
     { id: "drinkType", accessorKey: "drinkType", size: 130, header: "Drink Preference" },
     { id: "favoriteMenuItems", accessorKey: "favoriteMenuItems", size: 180, header: "Fav. Menu Items" },
@@ -283,11 +283,11 @@ function buildColumns(onUpdate: (id: string, field: string, value: unknown) => v
     { id: "personalObjective", accessorKey: "personalObjectiveLongRange", size: 200, header: "Personal Long-Range Goal" },
     { id: "personalImmediate", accessorKey: "personalObjectiveImmediate", size: 200, header: "Personal Immediate Goal" },
 
-    // McKay 66: Politics / Community
+    // Profile: Politics / Community
     { id: "politicalParty", accessorKey: "politicalParty", size: 120, header: "Political Party" },
     { id: "communityActive", accessorKey: "communityActive", size: 180, header: "Community Activity" },
 
-    // McKay 66: Sensitive/Notes
+    // Profile: Sensitive/Notes
     { id: "strongFeelings", accessorKey: "strongFeelings", size: 200, header: "Strong Feelings On" },
     { id: "internalNotes", accessorKey: "internalNotes", size: 220, header: "Internal Notes" },
 

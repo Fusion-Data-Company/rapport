@@ -50,7 +50,7 @@ export default function ContactsPage() {
           <h1 className="text-lg font-bold text-white" style={{ fontFamily: "'Playfair Display', serif" }}>
             Contacts
           </h1>
-          <p className="text-xs text-[var(--text-muted)]">McKay 66 relationship database</p>
+          <p className="text-xs text-[var(--text-muted)]">Relationship database</p>
         </div>
       </div>
 

@@ -5,7 +5,7 @@ import { Providers } from "./providers"
 import "./globals.css"
 
 export const metadata: Metadata = {
-  title: "Rapport — The McKay 66 Relationship Engine",
+  title: "Rapport — Relationship autopilot for people with a book of clients",
   description: "Every client. Every milestone. Every time. Rapport automates hyper-personalized relationship touchpoints so your clients feel like your only client.",
 }
 

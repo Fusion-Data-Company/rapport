@@ -39,7 +39,7 @@ export const tenantUsers = pgTable("tenant_users", {
   clerkIdx: uniqueIndex("tenant_users_clerk_idx").on(t.clerkUserId),
 }))
 
-// ── Contacts (McKay 66) ───────────────────────────────────────────────────────
+// ── Contacts (relationship profile) ───────────────────────────────────────────────────────
 
 export const contacts = pgTable("contacts", {
   id: uuid("id").primaryKey().defaultRandom(),

@@ -2,7 +2,7 @@
 
 **Relationship autopilot for people whose income depends on a book of clients.**
 
-Rapport keeps a McKay-66 style profile on every contact a rep cares about, watches the calendar
+Rapport keeps a rich personal profile on every contact a rep cares about, watches the calendar
 (birthdays, work anniversaries, renewals, their team's game results), writes the note the rep never
 has time to write, and sends it from the rep's own mailbox. Sales reps, account managers, agents,
 loan officers, recruiters.
