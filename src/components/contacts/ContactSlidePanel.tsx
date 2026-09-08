@@ -2,7 +2,7 @@
 import { useState } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { motion } from "framer-motion"
-import { X, Edit2, Save, Mail, Phone, Heart, Star, Briefcase, Dumbbell, Globe, CalendarClock, Plus, Trash2, History, Send, MessageSquare, PhoneCall, Users } from "lucide-react"
+import { X, Edit2, Save, Mail, Phone, Heart, Star, Briefcase, Dumbbell, Globe, CalendarClock, Plus, Trash2, History, Send, MessageSquare, PhoneCall, Users, ThumbsUp } from "lucide-react"
 import { FacebookIcon, LinkedInIcon, InstagramIcon, TikTokIcon, XIcon } from "@/components/ui/social-icons"
 import { GlassButton } from "@/components/ui/glass-button"
 import { GlassInput } from "@/components/ui/glass-input"
@@ -284,6 +284,19 @@ const SECTIONS: { key: Section; label: string; icon: React.ElementType }[] = [
 
 export default function ContactSlidePanel({ contact, onClose, onUpdate }: Props) {
   const [activeSection, setActiveSection] = useState<Section>("overview")
+  const [reviewMsg, setReviewMsg] = useState<{ ok: boolean; text: string } | null>(null)
+
+  // The ask goes into the approval queue, never straight out.
+  const review = useMutation({
+    mutationFn: async () => {
+      const r = await fetch(`/api/contacts/${contact.id}/review-request`, { method: "POST" })
+      const d = await r.json()
+      if (!r.ok) throw new Error(d.error ?? "Could not queue the ask")
+      return d
+    },
+    onSuccess: () => setReviewMsg({ ok: true, text: "Queued. Read it on the Today page, then approve." }),
+    onError: (e: Error) => setReviewMsg({ ok: false, text: e.message }),
+  })
 
   return (
     <motion.div
@@ -486,13 +499,19 @@ export default function ContactSlidePanel({ contact, onClose, onUpdate }: Props)
       </div>
 
       {/* Footer */}
-      <div className="px-5 py-3 border-t border-[var(--surface-border)] flex gap-2 shrink-0">
-        <GlassButton size="sm" className="flex-1" variant="ghost">
-          <Mail className="w-3.5 h-3.5" /> Send Card
+      <div className="px-5 py-3 border-t border-[var(--surface-border)] shrink-0">
+        <GlassButton
+          size="sm"
+          variant="ghost"
+          className="w-full"
+          loading={review.isPending}
+          onClick={() => { setReviewMsg(null); review.mutate() }}
+        >
+          <ThumbsUp className="w-3.5 h-3.5" /> Ask for a Google review
         </GlassButton>
-        <GlassButton size="sm" variant="ghost" className="text-[var(--coral)] border-[var(--coral)]/20 hover:bg-[var(--coral)]/10">
-          <X className="w-3.5 h-3.5" /> DNC
-        </GlassButton>
+        {reviewMsg && (
+          <p className={`text-xs mt-2 ${reviewMsg.ok ? "text-[var(--teal-light)]" : "text-[var(--coral)]"}`}>{reviewMsg.text}</p>
+        )}
       </div>
     </motion.div>
   )

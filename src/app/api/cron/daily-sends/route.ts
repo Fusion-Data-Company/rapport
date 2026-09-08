@@ -11,7 +11,7 @@ import { capState } from "@/lib/send-caps"
 import { addDays, addMonths, todayISO, type ISODate } from "@/lib/dates"
 import { milestoneMonthsFor, occasionsForDay, renewalLeadDaysFor, type ContactForOccasions, type DueOccasion } from "@/lib/occasions"
 import { formatHistory, recentTimeline } from "@/lib/timeline"
-import { lastSentByContact, withinTierGap } from "@/lib/tiers"
+import { askedForReview, lastSentByContact, withinTierGap } from "@/lib/tiers"
 
 export const runtime = "nodejs"
 export const maxDuration = 300
@@ -87,13 +87,16 @@ export async function GET(req: Request) {
       const book = await candidatesFor(tenant, today)
       // Tier cadence: A hears about everything, C hears from you a few times a year.
       const lastSent = await lastSentByContact(tenant.id, book.map((c) => c.id))
+      const asked = await askedForReview(tenant.id, book.map((c) => c.id))
       const due: { occasion: DueOccasion; contact: ContactForOccasions }[] = []
       for (const contact of book) {
         if (withinTierGap({ tier: contact.tier, lastSent: lastSent.get(contact.id), on: today, settings: tenant })) {
           skipped++
           continue
         }
-        for (const occasion of occasionsForDay(contact, tenant, today)) due.push({ occasion, contact })
+        for (const occasion of occasionsForDay(contact, tenant, today, asked.has(contact.id))) {
+          due.push({ occasion, contact })
+        }
       }
 
       for (const { occasion, contact } of due) {
@@ -126,31 +129,34 @@ export async function GET(req: Request) {
             sensitiveTopics: contact.sensitiveTopics,
             llmConfig: llm,
           })
+          // A review link has to survive the model, so it is appended after drafting
+          // rather than trusted to come back out of the prompt intact.
+          const finalBody = occasion.appendix ? `${body}\n\n${occasion.appendix}` : body
           const card = await cardFor(tenant.id, occasion.type)
 
           if (needsApproval) {
             // Written, not sent. The Schedule page releases it.
             await db.update(scheduledSends)
-              .set({ status: "pending_approval", emailSubject: subject, emailBodyText: body, cardTemplateId: card?.id ?? null })
+              .set({ status: "pending_approval", emailSubject: subject, emailBodyText: finalBody, cardTemplateId: card?.id ?? null })
               .where(eq(scheduledSends.id, sendId))
             await dispatch(tenant.id, "note.held", notePayload({
               event: "note.held", tenant, contact, sendId,
               occasionType: occasion.type, occasionLabel: occasion.label, scheduledDate: today,
-              subject, body,
+              subject, body: finalBody,
             }))
             held++
             continue
           }
           if (budget <= 0) {
             await db.update(scheduledSends)
-              .set({ status: "deferred", emailSubject: subject, emailBodyText: body, cardTemplateId: card?.id ?? null, errorMessage: "Held back by today's mailbox send cap." })
+              .set({ status: "deferred", emailSubject: subject, emailBodyText: finalBody, cardTemplateId: card?.id ?? null, errorMessage: "Held back by today's mailbox send cap." })
               .where(eq(scheduledSends.id, sendId))
             deferred++
             continue
           }
 
           await deliver({
-            sendId, tenant, contact, subject, body, cardUrl: card?.imageUrl, style,
+            sendId, tenant, contact, subject, body: finalBody, cardUrl: card?.imageUrl, style,
             occasionType: occasion.type, occasionLabel: occasion.label, scheduledDate: today,
           })
           budget--

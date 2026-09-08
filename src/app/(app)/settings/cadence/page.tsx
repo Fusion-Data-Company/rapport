@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { GlassCard } from "@/components/ui/glass-card"
 import { GlassButton } from "@/components/ui/glass-button"
 import { GlassInput } from "@/components/ui/glass-input"
-import { CalendarClock, Loader2, ShieldCheck, Layers } from "lucide-react"
+import { CalendarClock, Loader2, ShieldCheck, Layers, Star } from "lucide-react"
 import { TIERS, TIER_HINT, TIER_LABEL, type Tier } from "@/lib/tier-labels"
 import type { CadenceSettings } from "@/app/api/settings/cadence/route"
 
@@ -15,6 +15,8 @@ export default function CadenceSettingsPage() {
   const q = useQuery<CadenceSettings>({ queryKey: ["cadence"], queryFn: () => fetch("/api/settings/cadence").then(r => r.json()) })
   const [milestoneDraft, setMilestoneDraft] = useState<string | null>(null)
   const [tierDraft, setTierDraft] = useState<Partial<Record<Tier, string>>>({})
+  const [reviewUrl, setReviewUrl] = useState<string | null>(null)
+  const [reviewDays, setReviewDays] = useState<string | null>(null)
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null)
 
   const save = useMutation({
@@ -23,13 +25,19 @@ export default function CadenceSettingsPage() {
       milestoneMonths?: number[]
       alwaysReview?: boolean
       tierDays?: Partial<Record<Tier, number>>
+      googleReviewUrl?: string
+      reviewRequestDays?: number
     }) => {
       const r = await fetch("/api/settings/cadence", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
       const d = await r.json()
       if (!r.ok) throw new Error(d.error ?? "Could not save")
       return d
     },
-    onSuccess: () => { setMsg({ ok: true, text: "Saved." }); setMilestoneDraft(null); setTierDraft({}); qc.invalidateQueries({ queryKey: ["cadence"] }) },
+    onSuccess: () => {
+      setMsg({ ok: true, text: "Saved." })
+      setMilestoneDraft(null); setTierDraft({}); setReviewUrl(null); setReviewDays(null)
+      qc.invalidateQueries({ queryKey: ["cadence"] })
+    },
     onError: (e: Error) => setMsg({ ok: false, text: e.message }),
   })
 
@@ -185,6 +193,60 @@ export default function CadenceSettingsPage() {
                   save.mutate({ milestoneMonths: months })
                 }}
               >Save</GlassButton>
+            </div>
+          </GlassCard>
+
+          <GlassCard className="p-6 mt-5">
+            <p className="text-sm font-semibold text-white flex items-center gap-2">
+              <Star className="w-4 h-4 text-[var(--gold)]" /> Google review request
+            </p>
+            <p className="text-sm text-[var(--text-muted)] mb-4">
+              A short ask a set number of days after a closing, once per person, ever. It waits
+              in the same queue as everything else, so you can skip anyone it would catch at a
+              bad moment. Paste the link Google gives you under &ldquo;Ask for reviews&rdquo; on your
+              Business Profile. No link, no review requests.
+            </p>
+            <div className="space-y-3">
+              <GlassInput
+                label="Review link"
+                placeholder="https://g.page/r/..."
+                value={reviewUrl ?? s?.googleReviewUrl ?? ""}
+                onChange={(e) => setReviewUrl(e.target.value)}
+              />
+              <div>
+                <label htmlFor="review-days" className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">
+                  Days after closing
+                </label>
+                <div className="flex items-end gap-3 mt-1.5">
+                  <GlassInput
+                    id="review-days"
+                    type="number"
+                    min={0}
+                    max={365}
+                    className="w-28"
+                    value={reviewDays ?? String(s?.reviewRequestDays ?? 30)}
+                    onChange={(e) => setReviewDays(e.target.value)}
+                  />
+                  <span className="text-xs text-[var(--text-muted)] pb-3">0 switches the automatic ask off</span>
+                </div>
+              </div>
+              <GlassButton
+                size="sm"
+                loading={save.isPending}
+                disabled={reviewUrl === null && reviewDays === null}
+                onClick={() => {
+                  const days = reviewDays === null ? undefined : Number(reviewDays)
+                  if (days !== undefined && (!Number.isInteger(days) || days < 0 || days > 365)) {
+                    setMsg({ ok: false, text: "Days must be a whole number between 0 and 365." })
+                    return
+                  }
+                  setMsg(null)
+                  save.mutate({
+                    ...(reviewUrl !== null ? { googleReviewUrl: reviewUrl.trim() } : {}),
+                    ...(days !== undefined ? { reviewRequestDays: days } : {}),
+                  })
+                }}
+              >Save review settings</GlassButton>
             </div>
           </GlassCard>
         </>

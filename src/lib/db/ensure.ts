@@ -119,6 +119,13 @@ async function run() {
     )
   `)
   await db.execute(sql`create index if not exists webhook_endpoints_tenant_idx on webhook_endpoints (tenant_id)`)
+
+  // 0008 - the Google review request touch
+  await db.execute(sql`
+    alter table tenants
+      add column if not exists google_review_url text,
+      add column if not exists review_request_days integer not null default 30
+  `)
 }
 
 /** Runs the top-up once per process. Safe to await from any request path. */

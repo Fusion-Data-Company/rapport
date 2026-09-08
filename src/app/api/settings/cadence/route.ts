@@ -16,6 +16,8 @@ export type CadenceSettings = {
   milestoneMonths: number[]
   alwaysReview: boolean
   tierDays: { A: number; B: number; C: number }
+  googleReviewUrl: string
+  reviewRequestDays: number
   defaults: { renewalLeadDays: number; milestoneMonths: number[]; tierDays: { A: number; B: number; C: number } }
 }
 
@@ -30,6 +32,8 @@ export async function GET() {
     tierDays: {
       A: minDaysFor("A", gate.tenant), B: minDaysFor("B", gate.tenant), C: minDaysFor("C", gate.tenant),
     },
+    googleReviewUrl: gate.tenant.googleReviewUrl ?? "",
+    reviewRequestDays: gate.tenant.reviewRequestDays,
     defaults: {
       renewalLeadDays: DEFAULT_RENEWAL_LEAD_DAYS,
       milestoneMonths: DEFAULT_MILESTONE_MONTHS,
@@ -48,6 +52,8 @@ const Body = z.object({
     B: z.number().int().min(0).max(365),
     C: z.number().int().min(0).max(365),
   }).partial().optional(),
+  googleReviewUrl: z.string().trim().max(500).optional(),
+  reviewRequestDays: z.number().int().min(0).max(365).optional(),
 })
 
 export async function PATCH(req: Request) {
@@ -56,6 +62,15 @@ export async function PATCH(req: Request) {
   const parsed = Body.safeParse(await req.json().catch(() => null))
   if (!parsed.success) {
     return NextResponse.json({ error: "Lead time is 0 to 180 days; milestones are up to eight months between 1 and 120." }, { status: 400 })
+  }
+  const link = parsed.data.googleReviewUrl
+  if (link) {
+    try {
+      const u = new URL(link)
+      if (u.protocol !== "https:") throw new Error("not https")
+    } catch {
+      return NextResponse.json({ error: "The review link must be a full https URL, the one Google gives you under \"Ask for reviews\"." }, { status: 400 })
+    }
   }
   await ensureSchema()
   const d = parsed.data
@@ -68,6 +83,8 @@ export async function PATCH(req: Request) {
     ...(d.tierDays?.A !== undefined ? { tierAMinDays: d.tierDays.A } : {}),
     ...(d.tierDays?.B !== undefined ? { tierBMinDays: d.tierDays.B } : {}),
     ...(d.tierDays?.C !== undefined ? { tierCMinDays: d.tierDays.C } : {}),
+    ...(d.googleReviewUrl !== undefined ? { googleReviewUrl: d.googleReviewUrl || null } : {}),
+    ...(d.reviewRequestDays !== undefined ? { reviewRequestDays: d.reviewRequestDays } : {}),
     updatedAt: new Date(),
   }).where(eq(tenants.id, gate.tenant.id))
   return NextResponse.json({ ok: true })

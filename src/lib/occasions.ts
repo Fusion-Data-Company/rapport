@@ -48,6 +48,7 @@ export const MONEY_OCCASIONS: OccasionType[] = [
 
 export const DEFAULT_MILESTONE_MONTHS = [3, 6, 12]
 export const DEFAULT_RENEWAL_LEAD_DAYS = 30
+export const DEFAULT_REVIEW_REQUEST_DAYS = 30
 
 export type ContactForOccasions = ContactRow & {
   children?: ContactChildRow[]
@@ -57,6 +58,8 @@ export type ContactForOccasions = ContactRow & {
 export type TenantOccasionSettings = {
   renewalLeadDays?: number | null
   milestoneMonths?: number[] | null
+  googleReviewUrl?: string | null
+  reviewRequestDays?: number | null
 }
 
 export type DueOccasion = {
@@ -70,6 +73,8 @@ export type DueOccasion = {
   eventDate?: ISODate
   /** One line handed to the writer as the reason for the note. */
   prompt: string
+  /** Appended to the drafted body verbatim. A review link has to survive the model. */
+  appendix?: string
   childName?: string
 }
 
@@ -94,6 +99,15 @@ export function milestoneMonthsFor(t: TenantOccasionSettings): number[] {
   return raw.filter((m) => Number.isInteger(m) && m > 0 && m <= 120).slice(0, 8)
 }
 
+/** Days after a closing to ask for a review, or null when the ask is off. */
+export function reviewRequestDaysFor(t: TenantOccasionSettings): number | null {
+  if (!t.googleReviewUrl?.trim()) return null
+  const n = t.reviewRequestDays
+  if (n === 0) return null
+  if (n == null || !Number.isInteger(n) || n < 1 || n > 365) return DEFAULT_REVIEW_REQUEST_DAYS
+  return n
+}
+
 export function renewalLeadDaysFor(t: TenantOccasionSettings): number {
   const n = t.renewalLeadDays
   if (n == null || !Number.isInteger(n) || n < 0 || n > 180) return DEFAULT_RENEWAL_LEAD_DAYS
@@ -108,6 +122,8 @@ export function occasionsForDay(
   contact: ContactForOccasions,
   settings: TenantOccasionSettings,
   on: ISODate = todayISO(),
+  /** True when this contact has already been asked for a review. Asked once, ever. */
+  alreadyAskedForReview = false,
 ): DueOccasion[] {
   if (contact.status !== "active" || contact.unsubscribed) return []
 
@@ -198,6 +214,19 @@ export function occasionsForDay(
     }
   }
 
+  // The review ask, a set number of days after the closing, and only once ever. Every
+  // insurance comp has this; the difference is that here it rides the same approval
+  // queue as everything else, so nobody is asked at a bad moment.
+  const reviewDays = reviewRequestDaysFor(settings)
+  if (reviewDays !== null && closeDate && !alreadyAskedForReview && addDays(closeDate, reviewDays) === on) {
+    out.push({
+      contactId: contact.id, type: "review_request", sendDate: on, eventDate: on,
+      label: `Review request, ${reviewDays} days after closing`,
+      prompt: `${first} closed with you ${reviewDays} days ago. Ask, once and lightly, whether they would leave a short Google review. Two sentences at most. Do not include a link or a URL; one is added under your note. Do not offer anything in exchange for a review.`,
+      appendix: `Here is the link, it takes a minute: ${settings.googleReviewUrl?.trim()}`,
+    })
+  }
+
   // Custom dates. Several on one day are merged, because a contact gets one note a day.
   const customToday = (contact.customDates ?? []).filter((d) => {
     if (!d.isActive) return false
@@ -221,14 +250,19 @@ export function occasionsForDay(
 export function projectOccasions(
   contactList: ContactForOccasions[],
   settings: TenantOccasionSettings,
-  opts: { from?: ISODate; days?: number } = {},
+  opts: { from?: ISODate; days?: number; askedForReview?: Set<string> } = {},
 ): DueOccasion[] {
   const from = opts.from ?? todayISO()
   const days = Math.min(Math.max(opts.days ?? 30, 1), 120)
   const out: DueOccasion[] = []
   for (let i = 0; i < days; i++) {
     const day = addDays(from, i)
-    for (const c of contactList) out.push(...occasionsForDay(c, settings, day))
+    for (const c of contactList) {
+      out.push(...occasionsForDay(c, settings, day, opts.askedForReview?.has(c.id) ?? false))
+    }
   }
   return out.sort((a, b) => (a.sendDate < b.sendDate ? -1 : a.sendDate > b.sendDate ? 1 : 0))
 }
+
+/** Contacts already asked for a review, so nobody is asked twice. */
+export const REVIEW_OCCASION: OccasionType = "review_request"

@@ -51,6 +51,22 @@ export function withinTierGap(opts: {
   return days >= 0 && days < gap
 }
 
+/** Contacts that have ever had a review request written for them, in any status. */
+export async function askedForReview(tenantId: string, contactIds: string[]): Promise<Set<string>> {
+  const out = new Set<string>()
+  if (contactIds.length === 0) return out
+  const rows = await db
+    .select({ contactId: scheduledSends.contactId })
+    .from(scheduledSends)
+    .where(and(
+      eq(scheduledSends.tenantId, tenantId),
+      eq(scheduledSends.occasionType, "review_request"),
+      inArray(scheduledSends.contactId, contactIds),
+    ))
+  for (const r of rows) out.add(r.contactId)
+  return out
+}
+
 /** The most recent send date per contact, for a set of contacts. */
 export async function lastSentByContact(tenantId: string, contactIds: string[]): Promise<Map<string, string>> {
   const out = new Map<string, string>()

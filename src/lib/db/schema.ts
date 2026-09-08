@@ -32,6 +32,10 @@ export const tenants = pgTable("tenants", {
   tierCMinDays: integer("tier_c_min_days").notNull().default(75),
   /** Path segment on the inbound URL an AMS, CRM or Zapier posts contacts to. */
   inboundToken: text("inbound_token"),
+  /** The agent's own Google review link. No link, no review requests. */
+  googleReviewUrl: text("google_review_url"),
+  /** Days after a closing to ask for the review. Zero switches the automatic ask off. */
+  reviewRequestDays: integer("review_request_days").notNull().default(30),
   status: text("status").notNull().default("active"),
   // Billing (Stripe)
   stripeCustomerId: text("stripe_customer_id"),
