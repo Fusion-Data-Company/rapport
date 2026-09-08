@@ -13,6 +13,7 @@ export const runtime = "nodejs"
 export type CadenceSettings = {
   renewalLeadDays: number
   milestoneMonths: number[]
+  alwaysReview: boolean
   defaults: { renewalLeadDays: number; milestoneMonths: number[] }
 }
 
@@ -23,6 +24,7 @@ export async function GET() {
   const body: CadenceSettings = {
     renewalLeadDays: renewalLeadDaysFor(gate.tenant),
     milestoneMonths: milestoneMonthsFor(gate.tenant),
+    alwaysReview: gate.tenant.alwaysReview,
     defaults: { renewalLeadDays: DEFAULT_RENEWAL_LEAD_DAYS, milestoneMonths: DEFAULT_MILESTONE_MONTHS },
   }
   return NextResponse.json(body)
@@ -31,6 +33,7 @@ export async function GET() {
 const Body = z.object({
   renewalLeadDays: z.number().int().min(0).max(180).optional(),
   milestoneMonths: z.array(z.number().int().min(1).max(120)).max(8).optional(),
+  alwaysReview: z.boolean().optional(),
 })
 
 export async function PATCH(req: Request) {
@@ -47,6 +50,7 @@ export async function PATCH(req: Request) {
     ...(d.milestoneMonths !== undefined
       ? { milestoneMonths: [...new Set(d.milestoneMonths)].sort((a, b) => a - b) }
       : {}),
+    ...(d.alwaysReview !== undefined ? { alwaysReview: d.alwaysReview } : {}),
     updatedAt: new Date(),
   }).where(eq(tenants.id, gate.tenant.id))
   return NextResponse.json({ ok: true })

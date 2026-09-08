@@ -1,24 +1,20 @@
 import { NextResponse } from "next/server"
-import {
-  db, contacts, scheduledSends, cardTemplates, tenants, tenantEmailConfig, tenantLlmConfig, sendLog,
-} from "@/lib/db"
-import { eq, and, or, isNull, inArray, sql } from "drizzle-orm"
+import { db, contacts, scheduledSends, tenants, tenantEmailConfig, tenantLlmConfig } from "@/lib/db"
+import { eq, and, or, inArray, sql } from "drizzle-orm"
 import { open } from "@/lib/crypto"
 import { claimSend, ensureSendGuard, tenantMaySend, tenantNeedsApproval } from "@/lib/send-guard"
 import { generateEmailContent, type LLMConfig } from "@/lib/llm"
-import { sendMail } from "@/lib/mailer"
-import { unsubscribeUrl } from "@/lib/unsubscribe"
-import { buildNote, type BodyStyle } from "@/lib/email-body"
+import { cardFor, deliver, deliverWrittenRow } from "@/lib/deliver"
+import type { BodyStyle } from "@/lib/email-body"
 import { capState } from "@/lib/send-caps"
 import { addDays, addMonths, todayISO, type ISODate } from "@/lib/dates"
 import { milestoneMonthsFor, occasionsForDay, renewalLeadDaysFor, type ContactForOccasions, type DueOccasion } from "@/lib/occasions"
-import { formatHistory, recentTimeline, recordTimeline } from "@/lib/timeline"
+import { formatHistory, recentTimeline } from "@/lib/timeline"
 
 export const runtime = "nodejs"
 export const maxDuration = 300
 
 type Tenant = typeof tenants.$inferSelect
-type Contact = typeof contacts.$inferSelect
 
 async function loadLlmConfig(tenantId: string): Promise<LLMConfig> {
   const llmCfg = await db.query.tenantLlmConfig.findFirst({ where: eq(tenantLlmConfig.tenantId, tenantId) })
@@ -28,18 +24,6 @@ async function loadLlmConfig(tenantId: string): Promise<LLMConfig> {
     apiKey: open(llmCfg?.apiKeyEncrypted) ?? process.env.OPENROUTER_API_KEY,
     temperature: llmCfg?.temperature ?? 0.7,
   }
-}
-
-/** The tenant's own card for the occasion, else a system card; never another tenant's. */
-async function cardFor(tenantId: string, occasion: string) {
-  return db.query.cardTemplates.findFirst({
-    where: and(
-      eq(cardTemplates.occasionType, occasion),
-      eq(cardTemplates.isActive, true),
-      or(eq(cardTemplates.tenantId, tenantId), isNull(cardTemplates.tenantId)),
-    ),
-    orderBy: (c, { desc }) => [desc(c.tenantId)],
-  })
 }
 
 /**
@@ -174,33 +158,11 @@ export async function GET(req: Request) {
       })
       for (const send of queued) {
         if (send.status === "pending" && !send.sportsEventId) continue // occasion rows are claimed above
-        try {
-          const contact = await db.query.contacts.findFirst({ where: eq(contacts.id, send.contactId) })
-          if (!contact?.email) {
-            await db.update(scheduledSends).set({ status: "skipped", errorMessage: "No contact address" }).where(eq(scheduledSends.id, send.id))
-            continue
-          }
-          if (contact.unsubscribed || contact.status !== "active") {
-            await db.update(scheduledSends).set({ status: "skipped", errorMessage: "Contact unsubscribed" }).where(eq(scheduledSends.id, send.id))
-            continue
-          }
-          if (budget <= 0) { deferred++; continue }
-          const card = send.cardTemplateId
-            ? await db.query.cardTemplates.findFirst({ where: eq(cardTemplates.id, send.cardTemplateId) })
-            : await cardFor(tenant.id, send.occasionType)
-          await deliver({
-            sendId: send.id, tenant, contact,
-            subject: send.emailSubject ?? "Thinking of you",
-            body: send.emailBodyText ?? "",
-            cardUrl: card?.imageUrl, style,
-          })
-          budget--
-          processed++
-        } catch (e) {
-          console.error("Queued send failed:", e)
-          await db.update(scheduledSends).set({ status: "failed", errorMessage: String(e).slice(0, 500) }).where(eq(scheduledSends.id, send.id))
-          failed++
-        }
+        const { outcome } = await deliverWrittenRow({ send, tenant, style, budget })
+        if (outcome === "sent") { budget--; processed++ }
+        else if (outcome === "deferred") deferred++
+        else if (outcome === "failed") failed++
+        else skipped++
       }
     }
 
@@ -209,34 +171,4 @@ export async function GET(req: Request) {
     console.error("Daily cron error:", e)
     return NextResponse.json({ error: "Cron failed" }, { status: 500 })
   }
-}
-
-async function deliver({ sendId, tenant, contact, subject, body, cardUrl, style }: {
-  sendId: string; tenant: Tenant; contact: Contact; subject: string; body: string; cardUrl?: string | null; style: BodyStyle
-}) {
-  const unsubUrl = unsubscribeUrl(contact.id)
-  const note = buildNote({
-    body, cardUrl, style,
-    businessName: tenant.businessName,
-    fromName: tenant.fromName,
-    unsubscribeUrl: unsubUrl,
-    postalAddress: tenant.postalAddress ?? null,
-  })
-  const result = await sendMail(tenant.id, {
-    from: `${tenant.fromName} <${tenant.fromEmail}>`,
-    to: contact.email as string,
-    subject, text: note.text, html: note.html, unsubscribeUrl: unsubUrl,
-  })
-  await db.update(scheduledSends)
-    .set({ status: "sent", emailSubject: subject, emailBodyText: body, emailBodyHtml: note.html, sentAt: new Date(), errorMessage: null })
-    .where(eq(scheduledSends.id, sendId))
-  await db.insert(sendLog).values({
-    tenantId: tenant.id, contactId: contact.id, scheduledSendId: sendId, eventType: "sent",
-    metadata: { providerMessageId: result?.id ?? null },
-  }).catch(() => undefined)
-  // The note becomes history, so tomorrow's note knows what yesterday's said.
-  await recordTimeline({
-    tenantId: tenant.id, contactId: contact.id, kind: "sent",
-    summary: subject, body, source: "rapport", scheduledSendId: sendId,
-  })
 }

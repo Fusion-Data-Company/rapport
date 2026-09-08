@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { GlassCard } from "@/components/ui/glass-card"
 import { GlassButton } from "@/components/ui/glass-button"
 import { GlassInput } from "@/components/ui/glass-input"
-import { CalendarClock, Loader2 } from "lucide-react"
+import { CalendarClock, Loader2, ShieldCheck } from "lucide-react"
 import type { CadenceSettings } from "@/app/api/settings/cadence/route"
 
 const LEAD_PRESETS = [0, 14, 30, 45, 60]
@@ -16,7 +16,7 @@ export default function CadenceSettingsPage() {
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null)
 
   const save = useMutation({
-    mutationFn: async (body: Partial<CadenceSettings>) => {
+    mutationFn: async (body: Partial<Pick<CadenceSettings, "renewalLeadDays" | "milestoneMonths" | "alwaysReview">>) => {
       const r = await fetch("/api/settings/cadence", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
       const d = await r.json()
       if (!r.ok) throw new Error(d.error ?? "Could not save")
@@ -51,6 +51,34 @@ export default function CadenceSettingsPage() {
         <GlassCard className="p-6"><p className="text-sm text-red-300">Could not load your timing settings. Reload the page.</p></GlassCard>
       ) : (
         <>
+          <GlassCard className="p-6 mb-5">
+            <div className="flex items-start justify-between gap-4 flex-wrap">
+              <div className="max-w-md">
+                <p className="text-sm font-semibold text-white flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-[var(--teal)]" /> Always review before send
+                </p>
+                <p className="text-sm text-[var(--text-muted)] mt-1">
+                  On: every note waits on the Schedule page until you approve it, and nothing
+                  leaves your mailbox unread. Off: only the very first batch is held, and after
+                  that Rapport sends each morning on its own.
+                </p>
+              </div>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={!!s?.alwaysReview}
+                aria-label="Always review before send"
+                disabled={save.isPending}
+                onClick={() => save.mutate({ alwaysReview: !s?.alwaysReview })}
+                className={`relative w-14 h-8 rounded-full transition-colors shrink-0 disabled:opacity-50 ${
+                  s?.alwaysReview ? "bg-[var(--teal)]" : "bg-slate-700"
+                }`}
+              >
+                <span className={`absolute top-1 w-6 h-6 rounded-full bg-white transition-all ${s?.alwaysReview ? "left-7" : "left-1"}`} />
+              </button>
+            </div>
+          </GlassCard>
+
           <GlassCard className="p-6 mb-5">
             <p className="text-sm font-semibold text-white">Renewal lead time</p>
             <p className="text-sm text-[var(--text-muted)] mb-4">

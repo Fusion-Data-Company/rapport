@@ -15,7 +15,7 @@ const NAV = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
   { href: "/contacts",  icon: Users,           label: "Contacts" },
   { href: "/cards",     icon: CreditCard,      label: "Card Gallery" },
-  { href: "/schedule",  icon: Calendar,        label: "Schedule" },
+  { href: "/schedule",  icon: Calendar,        label: "Today" },
   { href: "/settings",  icon: Settings,        label: "Settings" },
 ]
 
