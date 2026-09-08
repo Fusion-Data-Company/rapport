@@ -60,9 +60,9 @@ export default function OnboardingPage() {
                 <p className="text-sm text-[var(--text-muted)]">Tell us about your business - this appears on every email you send</p>
               </div>
 
-              <GlassInput label="Business Name" placeholder="Luther Pools" value={form.businessName} onChange={update("businessName")} />
-              <GlassInput label="Your Name (appears as sender)" placeholder="Alex Luther" value={form.fromName} onChange={update("fromName")} />
-              <GlassInput label="From Email" type="email" placeholder="alex@lutherpools.com" value={form.fromEmail} onChange={update("fromEmail")} />
+              <GlassInput label="Business Name" placeholder="Fusion Data Company" value={form.businessName} onChange={update("businessName")} />
+              <GlassInput label="Your Name (appears as sender)" placeholder="Rob Yeager" value={form.fromName} onChange={update("fromName")} />
+              <GlassInput label="From Email" type="email" placeholder="rob@fusiondataco.com" value={form.fromEmail} onChange={update("fromEmail")} />
               <GlassInput label="Reply-To Email (optional)" type="email" placeholder="same as above" value={form.replyTo} onChange={update("replyTo")} />
 
               <GlassButton
