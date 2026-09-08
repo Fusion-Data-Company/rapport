@@ -191,7 +191,7 @@ export default function ImportPage() {
                       onChange={e => setFieldMap(prev => ({ ...prev, [h]: e.target.value }))}
                       className="flex-1 text-xs bg-slate-800 border border-slate-700 rounded px-2 py-1 text-white"
                     >
-                      <option value="">— skip —</option>
+                      <option value="">- skip -</option>
                       {IMPORT_FIELDS.map(f => (
                         <option key={f.key} value={f.key}>{f.label}</option>
                       ))}

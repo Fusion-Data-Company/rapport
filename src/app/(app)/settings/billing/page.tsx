@@ -42,7 +42,7 @@ export default async function BillingSettingsPage({ searchParams }: { searchPara
 
       {checkout === "success" && (
         <div className="mb-4 rounded-xl border border-[var(--teal)] bg-[rgba(43,168,162,0.1)] p-4 text-sm text-[var(--teal-light)]">
-          Thanks — your subscription is being activated. This page updates as soon as Stripe confirms the payment.
+          Thanks - your subscription is being activated. This page updates as soon as Stripe confirms the payment.
         </div>
       )}
 
@@ -69,7 +69,7 @@ export default async function BillingSettingsPage({ searchParams }: { searchPara
           {subscribed
             ? `${allowance.plan.label}, $${(tenant.seats * PRICE_PER_SEAT_USD).toLocaleString()}/month. The ${allowance.allowance.toLocaleString()} contact figure is a soft limit: Rapport never blocks a contact or an import because of it.`
             : trialActive
-              ? `Free trial${daysLeft !== null ? ` — ${daysLeft} day${daysLeft === 1 ? "" : "s"} left` : ""}. Subscribe any time to keep access after it ends.`
+              ? `Free trial${daysLeft !== null ? ` - ${daysLeft} day${daysLeft === 1 ? "" : "s"} left` : ""}. Subscribe any time to keep access after it ends.`
               : "No active subscription. Start one to keep using Rapport."}
         </p>
 

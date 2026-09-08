@@ -103,7 +103,7 @@ export default function CardsPage() {
         )}
       >
         <p className="text-sm text-[var(--text-muted)]">
-          {dragging ? "Drop to upload…" : "Drag images here to upload — or click Upload Cards above"}
+          {dragging ? "Drop to upload…" : "Drag images here to upload - or click Upload Cards above"}
         </p>
         {uploadMutation.isError && (
           <p className="text-xs text-red-400 mt-2">{(uploadMutation.error as Error).message}</p>

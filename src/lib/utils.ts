@@ -6,7 +6,7 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function formatDate(date: string | Date | null | undefined, opts: Intl.DateTimeFormatOptions = {}) {
-  if (!date) return "—"
+  if (!date) return "-"
   const d = typeof date === "string" ? new Date(date) : date
   return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", ...opts })
 }

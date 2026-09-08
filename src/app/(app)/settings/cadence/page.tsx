@@ -120,7 +120,7 @@ export default function CadenceSettingsPage() {
               <Layers className="w-4 h-4 text-[var(--teal)]" /> Tier cadence
             </p>
             <p className="text-sm text-[var(--text-muted)] mb-4">
-              The fewest days between notes to one person, by their tier. Set a contact&rsquo;s tier
+              The fewest days between notes to one person, by their tier. Set a contact&apos;s tier
               on their profile. Zero means no gap at all.
             </p>
             <div className="space-y-3">
@@ -203,7 +203,7 @@ export default function CadenceSettingsPage() {
             <p className="text-sm text-[var(--text-muted)] mb-4">
               A short ask a set number of days after a closing, once per person, ever. It waits
               in the same queue as everything else, so you can skip anyone it would catch at a
-              bad moment. Paste the link Google gives you under &ldquo;Ask for reviews&rdquo; on your
+              bad moment. Paste the link Google gives you under &quot;Ask for reviews&quot; on your
               Business Profile. No link, no review requests.
             </p>
             <div className="space-y-3">

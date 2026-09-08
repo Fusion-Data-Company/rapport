@@ -10,7 +10,7 @@ export async function POST(req: Request) {
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
   const tenant = await getCurrentTenant()
-  if (!tenant) return NextResponse.json({ error: "No tenant — complete onboarding first" }, { status: 400 })
+  if (!tenant) return NextResponse.json({ error: "No tenant - complete onboarding first" }, { status: 400 })
 
   let seats = 1
   try {

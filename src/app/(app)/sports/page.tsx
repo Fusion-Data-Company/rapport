@@ -19,7 +19,7 @@ export default function SportsPage() {
         <Activity className="w-5 h-5 text-[var(--coral)]" />
         <div>
           <h1 className="text-h1 text-white" style={{ fontFamily: "'Playfair Display', serif" }}>Sports Monitor</h1>
-          <p className="text-sm text-[var(--text-muted)]">Daily game results via ESPN — no API key required</p>
+          <p className="text-sm text-[var(--text-muted)]">Daily game results via ESPN - no API key required</p>
         </div>
         <div className="ml-auto flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold"
           style={{ background: "rgba(39,174,96,0.15)", color: "#4ade80", border: "1px solid rgba(39,174,96,0.25)" }}>
@@ -48,8 +48,8 @@ export default function SportsPage() {
           <h3 className="font-bold text-white text-sm">How Sports Monitoring Works</h3>
         </div>
         <div className="space-y-2 text-sm text-[var(--text-secondary)]">
-          <p>1. Rapport polls ESPN&rsquo;s public API 3× daily (8am, 2pm, 8pm PST)</p>
-          <p>2. Completed games are matched against your contacts&rsquo; favorite teams</p>
+          <p>1. Rapport polls ESPN&apos;s public API 3× daily (8am, 2pm, 8pm PST)</p>
+          <p>2. Completed games are matched against your contacts&apos; favorite teams</p>
           <p>3. A personalized reaction email is queued for delivery next morning (8am)</p>
           <p>4. Rate limited to max 1 sports email per contact per 7 days</p>
         </div>
@@ -72,7 +72,7 @@ export default function SportsPage() {
       </div>
 
       <p className="text-[11px] text-[var(--text-muted)] mt-4 text-center">
-        To add team preferences to a contact, open their profile in the Contacts table and use Paige to say &ldquo;Add [team name] as [first name]&rsquo;s favorite team&rdquo;
+        To add team preferences to a contact, open their profile in the Contacts table and use Paige to say &quot;Add [team name] as [first name]&apos;s favorite team&quot;
       </p>
     </div>
   )

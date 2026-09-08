@@ -127,7 +127,7 @@ function buildColumns(onUpdate: (id: string, field: string, value: unknown) => v
               {row.original.firstName} {row.original.lastName ?? ""}
             </p>
             {row.original.nickname && (
-              <p className="text-[11px] text-[var(--text-muted)] truncate">&ldquo;{row.original.nickname}&rdquo;</p>
+              <p className="text-[11px] text-[var(--text-muted)] truncate">&quot;{row.original.nickname}&quot;</p>
             )}
           </div>
         </div>
@@ -141,7 +141,7 @@ function buildColumns(onUpdate: (id: string, field: string, value: unknown) => v
       cell: ({ getValue }) => (
         <span className="flex items-center gap-1.5 text-[var(--text-secondary)]">
           <Building className="w-3 h-3 shrink-0 opacity-50" />
-          {(getValue() as string) ?? "—"}
+          {(getValue() as string) ?? "-"}
         </span>
       ),
     },
@@ -160,7 +160,7 @@ function buildColumns(onUpdate: (id: string, field: string, value: unknown) => v
             className="flex items-center gap-1.5 text-[var(--teal-light)] hover:underline" title={v}>
             <Mail className="w-3 h-3 shrink-0" />{v}
           </a>
-        ) : "—"
+        ) : "-"
       },
     },
 
@@ -175,7 +175,7 @@ function buildColumns(onUpdate: (id: string, field: string, value: unknown) => v
             className="flex items-center gap-1.5 text-[var(--sky)] hover:underline">
             <Phone className="w-3 h-3 shrink-0" />{v}
           </a>
-        ) : "—"
+        ) : "-"
       },
     },
 
@@ -271,7 +271,7 @@ function buildColumns(onUpdate: (id: string, field: string, value: unknown) => v
       id: "drinks", accessorKey: "drinks", size: 80, header: "Drinks?",
       cell: ({ getValue }) => {
         const v = getValue() as boolean | null
-        return v === null ? "—" : v ? <Check className="w-3.5 h-3.5 text-[var(--teal)]" /> : <span className="text-[var(--text-muted)]">No</span>
+        return v === null ? "-" : v ? <Check className="w-3.5 h-3.5 text-[var(--teal)]" /> : <span className="text-[var(--text-muted)]">No</span>
       },
     },
 
@@ -502,7 +502,7 @@ export default function ContactsTable({ contacts, onUpdate, onDelete, onAdd, onI
           {!isLoading && contacts.length === 0 && (
             <div className="flex flex-col items-center justify-center h-60 gap-3">
               <User className="w-10 h-10 text-[var(--text-muted)]" />
-              <p className="text-[var(--text-muted)]">No contacts yet — import a CSV or talk to Paige</p>
+              <p className="text-[var(--text-muted)]">No contacts yet - import a CSV or talk to Paige</p>
               <GlassButton size="sm" onClick={onImport}><Upload className="w-3.5 h-3.5" /> Import CSV</GlassButton>
             </div>
           )}

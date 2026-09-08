@@ -57,7 +57,7 @@ export default function OnboardingPage() {
                 <h2 className="text-xl font-bold text-white mb-1" style={{ fontFamily: "'Playfair Display', serif" }}>
                   Set up your account
                 </h2>
-                <p className="text-sm text-[var(--text-muted)]">Tell us about your business — this appears on every email you send</p>
+                <p className="text-sm text-[var(--text-muted)]">Tell us about your business - this appears on every email you send</p>
               </div>
 
               <GlassInput label="Business Name" placeholder="Luther Pools" value={form.businessName} onChange={update("businessName")} />
@@ -80,7 +80,7 @@ export default function OnboardingPage() {
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-5">
               <div>
                 <h2 className="text-xl font-bold text-white mb-1" style={{ fontFamily: "'Playfair Display', serif" }}>
-                  You&rsquo;re almost ready
+                  You&apos;re almost ready
                 </h2>
                 <p className="text-sm text-[var(--text-muted)]">Review your setup and launch Rapport</p>
               </div>

@@ -179,7 +179,7 @@ export default function HomePage() {
             <span className="kick">What actually goes out</span>
             <h2>Plain text, from your address, about one person.</h2>
             <p className="sub">
-              No banner, no template, no &ldquo;powered by&rdquo;. Rapport reads the last few things that
+              No banner, no template, no &quot;powered by&quot;. Rapport reads the last few things that
               happened with that contact - the note it sent in March, the reply you pasted in, the
               call you logged - and writes from those rather than from a profile form. The footer is
               the one quiet line the law requires.
@@ -238,7 +238,7 @@ export default function HomePage() {
             <span className="kick">Every morning</span>
             <h2>You read them. Then they go.</h2>
             <p className="sub">
-              Nothing leaves your mailbox until you have seen it. Open the day&rsquo;s queue on your phone,
+              Nothing leaves your mailbox until you have seen it. Open the day&apos;s queue on your phone,
               change the one line that is not how you would put it, and tap approve. Approving sends
               straight away, not tomorrow. Trust it after a fortnight and turn the review off; the
               switch is one tap in settings.

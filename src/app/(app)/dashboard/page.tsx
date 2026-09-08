@@ -64,7 +64,7 @@ export default function DashboardPage() {
       {/* Stats grid */}
       <motion.div variants={CONTAINER} initial="hidden" animate="show" className="grid grid-cols-4 gap-4">
         <StatCard icon={Mail} label="Sent This Month" value={s.sentThisMonth ?? 0} sub="email cards delivered" color="teal" />
-        <StatCard icon={TrendingUp} label="Open Rate" value={s.openRate ? `${s.openRate}%` : "—"} sub="vs 21% industry avg" color="gold" />
+        <StatCard icon={TrendingUp} label="Open Rate" value={s.openRate ? `${s.openRate}%` : "-"} sub="vs 21% industry avg" color="gold" />
         <StatCard icon={Users} label="Contacts Enrolled" value={s.totalContacts ?? 0} sub="active in database" color="sky" />
         <StatCard icon={Activity} label="Sports Alerts" value={s.sportsAlerts ?? 0} sub="this month" color="coral" />
       </motion.div>

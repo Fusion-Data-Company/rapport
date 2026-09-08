@@ -1,5 +1,5 @@
 "use client"
-// Real branded social media SVG icons — proper colors, not Lucide generics
+// Real branded social media SVG icons - proper colors, not Lucide generics
 import { cn } from "@/lib/utils"
 import { SVGProps } from "react"
 

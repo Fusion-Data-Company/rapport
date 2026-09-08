@@ -209,8 +209,8 @@ export default function EmailSettingsPage() {
             <p className="text-2xl font-bold text-white">{caps?.sentToday ?? 0}</p>
           </div>
           <div className="rounded-xl border border-[var(--surface-border)] p-3">
-            <p className="text-[11px] uppercase tracking-wider text-[var(--text-muted)] font-bold">Today&rsquo;s ceiling</p>
-            <p className="text-2xl font-bold text-white">{caps?.effectiveCap ?? "—"}</p>
+            <p className="text-[11px] uppercase tracking-wider text-[var(--text-muted)] font-bold">Today&apos;s ceiling</p>
+            <p className="text-2xl font-bold text-white">{caps?.effectiveCap ?? "-"}</p>
             {caps?.warmupCap != null && <p className="text-[11px] text-[var(--gold)] mt-0.5">warm-up day {caps.warmupDay}</p>}
           </div>
           <div className="rounded-xl border border-[var(--surface-border)] p-3">

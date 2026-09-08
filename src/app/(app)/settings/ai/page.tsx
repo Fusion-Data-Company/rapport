@@ -64,7 +64,7 @@ export default function AISettingsPage() {
             {selectedProvider.models.map(m => <option key={m} value={m}>{m}</option>)}
           </select>
           <p className="text-[11px] text-[var(--text-muted)] mt-1">
-            Recommended: <code className="text-[var(--teal)]">google/gemma-4-26b-a4b-it</code> — cheap, fast, good at short creative writing
+            Recommended: <code className="text-[var(--teal)]">google/gemma-4-26b-a4b-it</code> - cheap, fast, good at short creative writing
           </p>
         </div>
 

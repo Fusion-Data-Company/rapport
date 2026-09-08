@@ -1,4 +1,4 @@
-// ESPN Hidden JSON API — no auth required, comprehensive coverage
+// ESPN Hidden JSON API - no auth required, comprehensive coverage
 
 export interface ESPNGame {
   id: string

@@ -207,7 +207,7 @@ export default function SchedulePage() {
     <div className="p-4 sm:p-6 max-w-3xl mx-auto pb-24">
       <div className="flex items-center gap-3 mb-1">
         <Calendar className="w-5 h-5 text-[var(--gold)]" />
-        <h1 className="text-h1 text-white" style={{ fontFamily: "'Playfair Display', serif" }}>Today&rsquo;s notes</h1>
+        <h1 className="text-h1 text-white" style={{ fontFamily: "'Playfair Display', serif" }}>Today&apos;s notes</h1>
       </div>
       <p className="text-sm text-[var(--text-muted)] mb-5">
         Read them, change anything that is not how you would put it, then approve. Two minutes.
