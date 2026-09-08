@@ -5,8 +5,8 @@ import { Providers } from "./providers"
 import "./globals.css"
 
 export const metadata: Metadata = {
-  title: "Rapport — Relationship autopilot for people with a book of clients",
-  description: "Every client. Every milestone. Every time. Rapport automates hyper-personalized relationship touchpoints so your clients feel like your only client.",
+  title: "Rapport - renewal and anniversary notes for independent agents and loan officers",
+  description: "Rapport watches the dates that pay you - policy renewals, loan and home anniversaries, months since close - writes each note from your real history with that person, and sends it from your own Gmail or Microsoft 365 mailbox. $39 a month, no onboarding call.",
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
