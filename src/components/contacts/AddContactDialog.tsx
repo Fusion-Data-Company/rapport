@@ -5,19 +5,42 @@ import { GlassButton } from "@/components/ui/glass-button"
 import { GlassInput } from "@/components/ui/glass-input"
 import { X } from "lucide-react"
 
-const FIELDS: Array<{ key: string; label: string; type?: string; hint?: string }> = [
-  { key: "firstName", label: "First name" },
-  { key: "lastName", label: "Last name" },
-  { key: "email", label: "Email", type: "email", hint: "Notes go here. No email, no note." },
-  { key: "phone", label: "Phone" },
-  { key: "birthdate", label: "Birthday", type: "date" },
-  { key: "anniversary", label: "Anniversary", type: "date" },
-  { key: "spouseName", label: "Spouse or partner" },
-  { key: "companyName", label: "Company" },
-  { key: "jobTitle", label: "Title" },
-  { key: "placeHometown", label: "Hometown" },
-  { key: "college", label: "College" },
-  { key: "hobbies", label: "Hobbies and interests" },
+type Field = { key: string; label: string; type?: string; hint?: string }
+
+const GROUPS: { title: string; note?: string; fields: Field[] }[] = [
+  {
+    title: "Who they are",
+    fields: [
+      { key: "firstName", label: "First name" },
+      { key: "lastName", label: "Last name" },
+      { key: "email", label: "Email", type: "email", hint: "Notes go here. No email, no note." },
+      { key: "phone", label: "Phone" },
+      { key: "companyName", label: "Company" },
+      { key: "jobTitle", label: "Title" },
+    ],
+  },
+  {
+    title: "The money dates",
+    note: "A birthday is a courtesy. These are the dates a renewal or a referral turns on. Leave blank what you do not have.",
+    fields: [
+      { key: "policyRenewalDate", label: "Policy renewal", type: "date" },
+      { key: "policyType", label: "Policy type", hint: "Auto, home, term life" },
+      { key: "loanClosedDate", label: "Loan closing date", type: "date" },
+      { key: "loanType", label: "Loan type", hint: "30-year fixed, FHA" },
+      { key: "homePurchaseDate", label: "Home purchase date", type: "date" },
+    ],
+  },
+  {
+    title: "Personal",
+    fields: [
+      { key: "birthdate", label: "Birthday", type: "date" },
+      { key: "anniversary", label: "Wedding anniversary", type: "date" },
+      { key: "spouseName", label: "Spouse or partner" },
+      { key: "placeHometown", label: "Hometown" },
+      { key: "college", label: "College" },
+      { key: "hobbies", label: "Hobbies and interests" },
+    ],
+  },
 ]
 
 export function AddContactDialog({ open, onClose, onCreated }: { open: boolean; onClose: () => void; onCreated: () => void }) {
@@ -46,15 +69,23 @@ export function AddContactDialog({ open, onClose, onCreated }: { open: boolean; 
           <h2 className="text-lg font-bold text-white" style={{ fontFamily: "'Playfair Display', serif" }}>Add a contact</h2>
           <button type="button" onClick={onClose} aria-label="Close" className="text-[var(--text-muted)] hover:text-white"><X className="w-5 h-5" /></button>
         </div>
-        <form onSubmit={submit} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {FIELDS.map((f) => (
-            <label key={f.key} className="block">
-              <span className="text-xs text-[var(--text-muted)]">{f.label}{f.key === "firstName" ? " *" : ""}</span>
-              <GlassInput type={f.type ?? "text"} value={form[f.key] ?? ""} required={f.key === "firstName"} onChange={(e) => setForm({ ...form, [f.key]: e.target.value })} />
-              {f.hint && <span className="text-[11px] text-[var(--text-muted)]">{f.hint}</span>}
-            </label>
+        <form onSubmit={submit} className="space-y-5">
+          {GROUPS.map((g) => (
+            <fieldset key={g.title}>
+              <legend className="text-[10px] font-bold uppercase tracking-widest text-[var(--teal)] mb-1">{g.title}</legend>
+              {g.note && <p className="text-xs text-[var(--text-muted)] mb-2">{g.note}</p>}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {g.fields.map((f) => (
+                  <label key={f.key} className="block">
+                    <span className="text-xs text-[var(--text-muted)]">{f.label}{f.key === "firstName" ? " *" : ""}</span>
+                    <GlassInput type={f.type ?? "text"} value={form[f.key] ?? ""} required={f.key === "firstName"} onChange={(e) => setForm({ ...form, [f.key]: e.target.value })} />
+                    {f.hint && <span className="text-[11px] text-[var(--text-muted)]">{f.hint}</span>}
+                  </label>
+                ))}
+              </div>
+            </fieldset>
           ))}
-          <div className="sm:col-span-2 flex items-center gap-3 mt-2">
+          <div className="flex items-center gap-3 mt-2">
             <GlassButton type="submit" disabled={busy}>{busy ? "Adding" : "Add contact"}</GlassButton>
             <button type="button" onClick={onClose} className="text-sm text-[var(--text-muted)]">Cancel</button>
             {error && <span className="text-sm text-[var(--coral)]">{error}</span>}

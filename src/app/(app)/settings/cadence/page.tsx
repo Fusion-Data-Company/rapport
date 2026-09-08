@@ -1,0 +1,108 @@
+"use client"
+import { useState } from "react"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { GlassCard } from "@/components/ui/glass-card"
+import { GlassButton } from "@/components/ui/glass-button"
+import { GlassInput } from "@/components/ui/glass-input"
+import { CalendarClock, Loader2 } from "lucide-react"
+import type { CadenceSettings } from "@/app/api/settings/cadence/route"
+
+const LEAD_PRESETS = [0, 14, 30, 45, 60]
+
+export default function CadenceSettingsPage() {
+  const qc = useQueryClient()
+  const q = useQuery<CadenceSettings>({ queryKey: ["cadence"], queryFn: () => fetch("/api/settings/cadence").then(r => r.json()) })
+  const [milestoneDraft, setMilestoneDraft] = useState<string | null>(null)
+  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null)
+
+  const save = useMutation({
+    mutationFn: async (body: Partial<CadenceSettings>) => {
+      const r = await fetch("/api/settings/cadence", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
+      const d = await r.json()
+      if (!r.ok) throw new Error(d.error ?? "Could not save")
+      return d
+    },
+    onSuccess: () => { setMsg({ ok: true, text: "Saved." }); setMilestoneDraft(null); qc.invalidateQueries({ queryKey: ["cadence"] }) },
+    onError: (e: Error) => setMsg({ ok: false, text: e.message }),
+  })
+
+  const s = q.data
+  const milestoneValue = milestoneDraft ?? (s?.milestoneMonths ?? []).join(", ")
+
+  return (
+    <div className="p-6 max-w-2xl mx-auto pb-16">
+      <div className="flex items-center gap-3 mb-6">
+        <CalendarClock className="w-5 h-5 text-[var(--gold)]" />
+        <div>
+          <h1 className="text-h1 text-white" style={{ fontFamily: "'Playfair Display', serif" }}>Timing</h1>
+          <p className="text-sm text-[var(--text-muted)]">When the money dates fire. Birthdays and anniversaries always go out on the day.</p>
+        </div>
+      </div>
+
+      {msg && (
+        <GlassCard className={`p-4 mb-4 ${msg.ok ? "border-[var(--teal)]" : "border-[var(--coral)]"}`}>
+          <p className={`text-sm ${msg.ok ? "text-[var(--teal-light)]" : "text-red-300"}`}>{msg.text}</p>
+        </GlassCard>
+      )}
+
+      {q.isLoading ? (
+        <GlassCard className="p-6"><p className="text-sm text-[var(--text-muted)] flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Loading</p></GlassCard>
+      ) : q.isError ? (
+        <GlassCard className="p-6"><p className="text-sm text-red-300">Could not load your timing settings. Reload the page.</p></GlassCard>
+      ) : (
+        <>
+          <GlassCard className="p-6 mb-5">
+            <p className="text-sm font-semibold text-white">Renewal lead time</p>
+            <p className="text-sm text-[var(--text-muted)] mb-4">
+              A renewal note goes out this many days before the renewal date. After it renews, the conversation is a claim, not a review.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {LEAD_PRESETS.map((d) => (
+                <button
+                  key={d}
+                  type="button"
+                  onClick={() => save.mutate({ renewalLeadDays: d })}
+                  className={`px-4 py-2 rounded-full border text-sm font-medium transition-colors ${
+                    s?.renewalLeadDays === d
+                      ? "border-[var(--teal)] bg-[rgba(43,168,162,0.12)] text-[var(--teal-light)]"
+                      : "border-[var(--surface-border)] text-[var(--text-muted)] hover:text-white"
+                  }`}
+                >{d === 0 ? "On the day" : `${d} days before`}</button>
+              ))}
+            </div>
+          </GlassCard>
+
+          <GlassCard className="p-6">
+            <p className="text-sm font-semibold text-white">Months since close</p>
+            <p className="text-sm text-[var(--text-muted)] mb-4">
+              Check-ins after a loan or home closing, in months. Up to eight, comma separated. Leave it at {s?.defaults.milestoneMonths.join(", ")} if you are not sure.
+            </p>
+            <div className="flex items-end gap-3">
+              <GlassInput
+                aria-label="Months since close"
+                className="w-48"
+                value={milestoneValue}
+                onChange={(e) => setMilestoneDraft(e.target.value)}
+                placeholder="3, 6, 12"
+              />
+              <GlassButton
+                size="sm"
+                loading={save.isPending}
+                disabled={milestoneDraft === null}
+                onClick={() => {
+                  const months = (milestoneDraft ?? "")
+                    .split(",")
+                    .map((v) => Number(v.trim()))
+                    .filter((v) => Number.isInteger(v) && v >= 1 && v <= 120)
+                  if (months.length === 0) { setMsg({ ok: false, text: "Give at least one month between 1 and 120." }); return }
+                  setMsg(null)
+                  save.mutate({ milestoneMonths: months })
+                }}
+              >Save</GlassButton>
+            </div>
+          </GlassCard>
+        </>
+      )}
+    </div>
+  )
+}

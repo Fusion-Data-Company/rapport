@@ -24,10 +24,15 @@ function getClient(config: LLMConfig): { client: OpenAI; model: string } {
 }
 
 export async function generateEmailContent(opts: {
+  /** The short human label for the occasion, e.g. "Policy renews March 14". */
   occasion: string
+  /** One sentence saying exactly why this note is going out today. */
+  occasionPrompt?: string
   contactFirstName: string
   context: Record<string, string | null | undefined>
   businessName: string
+  /** The person signing the note, when that is not the business name. */
+  senderName?: string
   sensitiveTopics?: string | null
   llmConfig: LLMConfig
 }): Promise<{ subject: string; body: string }> {
@@ -39,35 +44,39 @@ export async function generateEmailContent(opts: {
     .join("\n")
 
   const sensitiveNote = opts.sensitiveTopics
-    ? `\nDO NOT mention or allude to any of these topics: ${opts.sensitiveTopics}`
+    ? `\nNever mention or allude to any of these topics: ${opts.sensitiveTopics}`
     : ""
 
-  const prompt = `You are writing on behalf of "${opts.businessName}" to send a ${opts.occasion} message to ${opts.contactFirstName}.
+  const signer = opts.senderName?.trim() || opts.businessName
 
-Personal context about ${opts.contactFirstName} (use naturally — reference at most ONE of these):
-${contextLines || "- No additional context available"}
+  const prompt = `You are ${signer} at "${opts.businessName}", writing one short personal email to ${opts.contactFirstName}.
+
+Why you are writing today:
+${opts.occasionPrompt ?? opts.occasion}
+
+What you know about ${opts.contactFirstName} (reference at most ONE of these, and only if it fits):
+${contextLines || "- Nothing beyond their name"}
 ${sensitiveNote}
 
 Write:
-1. EMAIL SUBJECT: A warm, personalized subject line (not generic)
-2. EMAIL BODY: 2-3 warm, personal sentences that feel hand-written, not templated.
+1. EMAIL SUBJECT: a short subject line a real person would type. No emoji, no exclamation marks.
+2. EMAIL BODY: two or three sentences that read as if you typed them yourself.
 
 Rules:
-- Start body with "${opts.contactFirstName},"
-- Reference exactly ONE personal detail if available (naturally, not forced)
-- Do NOT start with "Dear", "Hello", "I hope this email finds you"
-- Do NOT use phrases like "just wanted to reach out" or "hope you're doing well"
-- Close warmly in the voice of ${opts.businessName}
-- Tone: like a thoughtful friend, not a marketer. Brief > long.
+- Start the body with "${opts.contactFirstName}," on its own line.
+- Do not open with "Dear", "Hello", "I hope this email finds you", or "just wanted to reach out".
+- No marketing language, no offers, no prices, no promises about coverage or rates.
+- Do not sign off; the signature is added for you.
+- Plain sentences. Brief beats long. No em-dashes.
 
 Format your response EXACTLY as:
 SUBJECT: [subject line]
-BODY: [2-3 sentence message]`
+BODY: [the message]`
 
   const completion = await client.chat.completions.create({
     model,
     messages: [{ role: "user", content: prompt }],
-    max_tokens: 300,
+    max_tokens: 320,
     temperature: opts.llmConfig.temperature ?? 0.7,
   })
 
@@ -76,7 +85,7 @@ BODY: [2-3 sentence message]`
   const bodyMatch = text.match(/BODY:\s*([\s\S]+)/i)
 
   return {
-    subject: subjectMatch?.[1]?.trim() ?? `Happy ${opts.occasion}, ${opts.contactFirstName}!`,
+    subject: subjectMatch?.[1]?.trim() ?? `${opts.occasion}, ${opts.contactFirstName}`,
     body: bodyMatch?.[1]?.trim() ?? text.trim(),
   }
 }

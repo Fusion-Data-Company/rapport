@@ -28,7 +28,51 @@ const FIELD_MAP: Record<string, string> = {
   "college": "college", "university": "college",
   "car": "carType", "vehicle": "carType",
   "hometown": "placeHometown",
+
+  // The money dates. AMS and CRM exports call these a dozen different things.
+  "policy renewal": "policyRenewalDate", "policy renewal date": "policyRenewalDate",
+  "renewal": "policyRenewalDate", "renewal date": "policyRenewalDate",
+  "expiration": "policyRenewalDate", "expiration date": "policyRenewalDate",
+  "policy expiration": "policyRenewalDate", "x date": "policyRenewalDate", "x-date": "policyRenewalDate",
+  "effective date": "policyRenewalDate",
+  "policy type": "policyType", "line of business": "policyType", "lob": "policyType", "product": "policyType",
+  "loan close date": "loanClosedDate", "loan closed": "loanClosedDate", "closing date": "loanClosedDate",
+  "close date": "loanClosedDate", "closed date": "loanClosedDate", "funded date": "loanClosedDate",
+  "funding date": "loanClosedDate", "loan closing date": "loanClosedDate",
+  "loan type": "loanType", "loan program": "loanType",
+  "home purchase date": "homePurchaseDate", "purchase date": "homePurchaseDate",
+  "home anniversary": "homePurchaseDate", "closed on home": "homePurchaseDate",
+  "custom date": "customDate", "custom date label": "customDateLabel",
 }
+
+/** Every column the importer understands, for the mapping step and the docs. */
+export const IMPORT_FIELDS: { key: string; label: string }[] = [
+  { key: "firstName", label: "First name" },
+  { key: "lastName", label: "Last name" },
+  { key: "nickname", label: "Nickname" },
+  { key: "email", label: "Email" },
+  { key: "phone", label: "Phone" },
+  { key: "companyName", label: "Company" },
+  { key: "jobTitle", label: "Title" },
+  { key: "birthdate", label: "Birthday" },
+  { key: "anniversary", label: "Wedding anniversary" },
+  { key: "policyRenewalDate", label: "Policy renewal date" },
+  { key: "policyType", label: "Policy type" },
+  { key: "loanClosedDate", label: "Loan closing date" },
+  { key: "loanType", label: "Loan type" },
+  { key: "homePurchaseDate", label: "Home purchase date" },
+  { key: "customDate", label: "Custom date" },
+  { key: "customDateLabel", label: "Custom date label" },
+  { key: "spouseName", label: "Spouse" },
+  { key: "city", label: "City" },
+  { key: "state", label: "State" },
+  { key: "zip", label: "Zip" },
+  { key: "placeHometown", label: "Hometown" },
+  { key: "college", label: "College" },
+  { key: "hobbies", label: "Hobbies" },
+  { key: "carType", label: "Car" },
+  { key: "internalNotes", label: "Notes" },
+]
 
 function mapHeader(h: string): string {
   return FIELD_MAP[h.toLowerCase().trim()] ?? h
@@ -91,7 +135,7 @@ export default function ImportPage() {
     <div className="p-6 max-w-3xl mx-auto">
       <div className="mb-6">
         <h1 className="text-h1 text-white mb-1" style={{ fontFamily: "'Playfair Display', serif" }}>Import Contacts</h1>
-        <p className="text-sm text-[var(--text-muted)]">Upload a CSV or spreadsheet — we&rsquo;ll map the columns automatically</p>
+        <p className="text-sm text-[var(--text-muted)]">Export from HawkSoft, EZLynx, Follow Up Boss or a spreadsheet. Rapport maps the columns it recognises, including policy renewal, loan closing and home purchase dates.</p>
       </div>
 
       <AnimatePresence mode="wait">
@@ -113,7 +157,7 @@ export default function ImportPage() {
               </div>
               <div className="text-center">
                 <p className="text-lg font-semibold text-white mb-1">Drop your file here</p>
-                <p className="text-sm text-[var(--text-muted)]">CSV or Excel supported · any column layout</p>
+                <p className="text-sm text-[var(--text-muted)]">CSV or Excel, any column layout. Dates can be 2026-03-15, 3/15/2026 or March 15, 2026.</p>
               </div>
               <input id="file-input" type="file" accept=".csv,.xlsx,.xls" className="hidden"
                 onChange={e => e.target.files?.[0] && onFile(e.target.files[0])} />
@@ -128,7 +172,7 @@ export default function ImportPage() {
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <p className="font-semibold text-white">{rows.length.toLocaleString()} contacts ready</p>
-                  <p className="text-xs text-[var(--text-muted)]">Review column mapping — we auto-detected what we could</p>
+                  <p className="text-xs text-[var(--text-muted)]">Check the mapping. Renewal, closing and purchase dates are what drive the money-date notes, so map those if the export has them.</p>
                 </div>
                 <GlassButton size="sm" variant="ghost" onClick={() => setStep("upload")}>
                   <X className="w-3.5 h-3.5" /> Change file
@@ -146,8 +190,8 @@ export default function ImportPage() {
                       className="flex-1 text-xs bg-slate-800 border border-slate-700 rounded px-2 py-1 text-white"
                     >
                       <option value="">— skip —</option>
-                      {["firstName","lastName","nickname","email","phone","companyName","jobTitle","city","state","zip","birthdate","anniversary","spouseName","spouseOccupation","college","hobbies","carType","placeHometown","internalNotes","facebookUrl","linkedinUrl","instagramUrl","twitterUrl","tiktokUrl","websiteUrl","tags"].map(f => (
-                        <option key={f} value={f}>{f}</option>
+                      {IMPORT_FIELDS.map(f => (
+                        <option key={f.key} value={f.key}>{f.label}</option>
                       ))}
                     </select>
                   </div>

@@ -82,7 +82,10 @@ export async function GET(req: Request) {
             occasion: isWin
               ? `${fan.teamName} win (${game.awayTeamName} ${game.awayScore} vs ${game.homeTeamName} ${game.homeScore})`
               : `${fan.teamName} loss`,
-            contactFirstName: contact.firstName,
+            occasionPrompt: isWin
+              ? `${fan.teamName} won last night, ${game.awayTeamName} ${game.awayScore} to ${game.homeTeamName} ${game.homeScore}. ${contact.firstName} follows them. One line of shared celebration, nothing about business.`
+              : `${fan.teamName} lost last night. ${contact.firstName} follows them. Keep it light and short; do not gloat and do not console too hard.`,
+            contactFirstName: contact.nickname?.trim() || contact.firstName,
             context: {
               "favorite team": fan.teamName,
               "sport": fan.sport,
@@ -90,6 +93,7 @@ export async function GET(req: Request) {
               city: contact.city,
             },
             businessName: tenant?.businessName ?? "your business",
+            senderName: tenant?.fromName,
             sensitiveTopics: contact.sensitiveTopics,
             llmConfig,
           })

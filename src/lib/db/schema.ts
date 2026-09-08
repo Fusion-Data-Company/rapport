@@ -18,6 +18,13 @@ export const tenants = pgTable("tenants", {
   timezone: text("timezone").notNull().default("America/Los_Angeles"),
   // CAN-SPAM: the sender's physical mailing address, printed in every note's footer.
   postalAddress: text("postal_address"),
+  // A renewal note goes out this many days BEFORE the renewal date; the money date is
+  // only useful early. Zero means "on the day".
+  renewalLeadDays: integer("renewal_lead_days").notNull().default(30),
+  // "N months since close" touches, in months after the closing date.
+  milestoneMonths: integer("milestone_months").array(),
+  // On by default: nothing leaves the building until the agent has read it.
+  alwaysReview: boolean("always_review").notNull().default(true),
   status: text("status").notNull().default("active"),
   // Billing (Stripe)
   stripeCustomerId: text("stripe_customer_id"),
@@ -67,6 +74,15 @@ export const contacts = pgTable("contacts", {
   spouseEducation: text("spouse_education"),
   spouseInterests: text("spouse_interests"),
   anniversary: date("anniversary"),
+
+  // ── The money dates ────────────────────────────────────────────────────────
+  // The dates a renewal or a referral actually turns on. A birthday is a courtesy;
+  // these are the reason the book is worth anything.
+  policyRenewalDate: date("policy_renewal_date"),
+  policyType: text("policy_type"),
+  loanClosedDate: date("loan_closed_date"),
+  loanType: text("loan_type"),
+  homePurchaseDate: date("home_purchase_date"),
 
   // Education
   highSchool: text("high_school"),
@@ -182,6 +198,23 @@ export const contactChildren = pgTable("contact_children", {
   notes: text("notes"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 })
+
+/** Any other date this contact should be remembered on. Free-form, per contact. */
+export const contactDates = pgTable("contact_dates", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  contactId: uuid("contact_id").notNull().references(() => contacts.id, { onDelete: "cascade" }),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
+  label: text("label").notNull(),
+  date: date("date").notNull(),
+  /** "annual" repeats every year on the same month and day; "once" fires on the date itself. */
+  recurrence: text("recurrence").notNull().default("annual"),
+  notes: text("notes"),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (t) => ({
+  contactIdx: index("contact_dates_contact_idx").on(t.contactId),
+  tenantIdx: index("contact_dates_tenant_idx").on(t.tenantId),
+}))
 
 export const contactSportsTeams = pgTable("contact_sports_teams", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -372,7 +405,12 @@ export const contactsRelations = relations(contacts, ({ one, many }) => ({
   tenant: one(tenants, { fields: [contacts.tenantId], references: [tenants.id] }),
   children: many(contactChildren),
   sportsTeams: many(contactSportsTeams),
+  customDates: many(contactDates),
   scheduledSends: many(scheduledSends),
+}))
+
+export const contactDatesRelations = relations(contactDates, ({ one }) => ({
+  contact: one(contacts, { fields: [contactDates.contactId], references: [contacts.id] }),
 }))
 
 export const contactChildrenRelations = relations(contactChildren, ({ one }) => ({

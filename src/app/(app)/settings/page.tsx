@@ -1,12 +1,13 @@
 "use client"
 import Link from "next/link"
 import { GlassCard } from "@/components/ui/glass-card"
-import { Mail, Brain, User, CreditCard } from "lucide-react"
+import { Mail, Brain, User, CreditCard, CalendarClock } from "lucide-react"
 
 const SETTINGS_CARDS = [
   { href: "/settings/profile", icon: User, label: "Business profile", description: "Your name, business name, reply-to and the mailing address printed in every note" },
   { href: "/settings/billing", icon: CreditCard, label: "Billing", description: "Plan, seats, invoices and payment method" },
   { href: "/settings/email", icon: Mail, label: "Sending mailbox", description: "Connect Gmail or Microsoft 365 in one click, set the daily send cap, and check SPF, DKIM and DMARC" },
+  { href: "/settings/cadence", icon: CalendarClock, label: "Timing", description: "How far ahead renewal notes go out, and the months-since-close check-ins" },
   { href: "/settings/ai", icon: Brain, label: "AI / LLM", description: "Set your OpenRouter, Anthropic, OpenAI, or Google API key and model" },
 ]
 

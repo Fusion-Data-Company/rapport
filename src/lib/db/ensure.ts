@@ -35,6 +35,38 @@ async function run() {
       add column if not exists dns_detail jsonb,
       add column if not exists dns_checked_at timestamptz
   `)
+  // 0004 - the money dates
+  await db.execute(sql`
+    alter table tenants
+      add column if not exists renewal_lead_days integer not null default 30,
+      add column if not exists milestone_months integer[],
+      add column if not exists always_review boolean not null default true
+  `)
+  await db.execute(sql`
+    alter table contacts
+      add column if not exists policy_renewal_date date,
+      add column if not exists policy_type text,
+      add column if not exists loan_closed_date date,
+      add column if not exists loan_type text,
+      add column if not exists home_purchase_date date
+  `)
+  await db.execute(sql`
+    create table if not exists contact_dates (
+      id uuid primary key default gen_random_uuid(),
+      contact_id uuid not null references contacts(id) on delete cascade,
+      tenant_id uuid not null references tenants(id) on delete cascade,
+      label text not null,
+      date date not null,
+      recurrence text not null default 'annual',
+      notes text,
+      is_active boolean not null default true,
+      created_at timestamp not null default now()
+    )
+  `)
+  await db.execute(sql`create index if not exists contact_dates_contact_idx on contact_dates (contact_id)`)
+  await db.execute(sql`create index if not exists contact_dates_tenant_idx on contact_dates (tenant_id)`)
+  await db.execute(sql`create index if not exists contacts_policy_renewal_idx on contacts (tenant_id, policy_renewal_date)`)
+  await db.execute(sql`create index if not exists contacts_loan_closed_idx on contacts (tenant_id, loan_closed_date)`)
 }
 
 /** Runs the top-up once per process. Safe to await from any request path. */

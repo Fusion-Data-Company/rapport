@@ -1,12 +1,13 @@
 "use client"
 import { useState } from "react"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { motion } from "framer-motion"
-import { X, Edit2, Save, Mail, Phone, Building, MapPin, Heart, Cake, Users, Star, Briefcase, GraduationCap, Dumbbell, Globe } from "lucide-react"
+import { X, Edit2, Save, Mail, Phone, Heart, Star, Briefcase, Dumbbell, Globe, CalendarClock, Plus, Trash2 } from "lucide-react"
 import { FacebookIcon, LinkedInIcon, InstagramIcon, TikTokIcon, XIcon } from "@/components/ui/social-icons"
 import { GlassButton } from "@/components/ui/glass-button"
 import { GlassInput } from "@/components/ui/glass-input"
 import { cn, formatDate, getInitials } from "@/lib/utils"
-import type { ContactWithRelations } from "@/lib/types"
+import type { ContactDateRow, ContactWithRelations } from "@/lib/types"
 
 type Contact = ContactWithRelations
 
@@ -16,7 +17,7 @@ interface Props {
   onUpdate: (id: string, field: string, value: unknown) => Promise<void>
 }
 
-type Section = "overview" | "family" | "business" | "lifestyle" | "notes"
+type Section = "overview" | "dates" | "family" | "business" | "lifestyle" | "notes"
 
 function Section({ title, icon: Icon, children }: { title: string; icon: React.ElementType; children: React.ReactNode }) {
   return (
@@ -30,9 +31,10 @@ function Section({ title, icon: Icon, children }: { title: string; icon: React.E
   )
 }
 
-function Field({ label, value, field, contactId, onUpdate, multiline = false }: {
+function Field({ label, value, field, contactId, onUpdate, multiline = false, placeholder }: {
   label: string; value: string | null | undefined; field: string;
-  contactId: string; onUpdate: (id: string, f: string, v: unknown) => Promise<void>; multiline?: boolean
+  contactId: string; onUpdate: (id: string, f: string, v: unknown) => Promise<void>
+  multiline?: boolean; placeholder?: string
 }) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(value ?? "")
@@ -51,7 +53,7 @@ function Field({ label, value, field, contactId, onUpdate, multiline = false }: 
             <textarea value={draft} onChange={e => setDraft(e.target.value)}
               className="input-premium text-sm flex-1 resize-none" rows={3} autoFocus />
           ) : (
-            <input value={draft} onChange={e => setDraft(e.target.value)}
+            <input value={draft} onChange={e => setDraft(e.target.value)} placeholder={placeholder}
               className="input-premium text-sm flex-1" autoFocus onKeyDown={e => e.key === "Enter" && save()} />
           )}
           <button onClick={save} className="text-[var(--teal)] hover:text-[var(--teal-light)]">
@@ -66,15 +68,93 @@ function Field({ label, value, field, contactId, onUpdate, multiline = false }: 
           onClick={() => setEditing(true)}
           className="text-sm text-[var(--text-primary)] cursor-text hover:bg-slate-800/50 rounded px-1 -ml-1 py-0.5 transition-colors min-h-[22px]"
         >
-          {value || <span className="text-[var(--text-muted)] italic">Click to add</span>}
+          {value || <span className="text-[var(--text-muted)] italic">Click to add{placeholder ? ` (${placeholder})` : ""}</span>}
         </p>
       )}
     </div>
   )
 }
 
+/** The dates an agent gets paid on, and anything else they want remembered. */
+function CustomDates({ contactId, seeded }: { contactId: string; seeded?: ContactDateRow[] }) {
+  const qc = useQueryClient()
+  const key = ["contact-dates", contactId]
+  const { data = seeded ?? [], isLoading } = useQuery<ContactDateRow[]>({
+    queryKey: key,
+    queryFn: () => fetch(`/api/contacts/${contactId}/dates`).then(r => r.json()),
+    initialData: seeded,
+  })
+  const [label, setLabel] = useState("")
+  const [date, setDate] = useState("")
+  const [recurrence, setRecurrence] = useState<"annual" | "once">("annual")
+  const [error, setError] = useState<string | null>(null)
+
+  const add = useMutation({
+    mutationFn: async () => {
+      const r = await fetch(`/api/contacts/${contactId}/dates`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ label, date, recurrence }),
+      })
+      const d = await r.json()
+      if (!r.ok) throw new Error(d.error ?? "Could not add that date")
+      return d
+    },
+    onSuccess: () => { setLabel(""); setDate(""); setError(null); qc.invalidateQueries({ queryKey: key }) },
+    onError: (e: Error) => setError(e.message),
+  })
+
+  const remove = useMutation({
+    mutationFn: (id: string) => fetch(`/api/contacts/${contactId}/dates/${id}`, { method: "DELETE" }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: key }),
+  })
+
+  return (
+    <div className="space-y-2.5">
+      {isLoading && <p className="text-xs text-[var(--text-muted)]">Loading dates</p>}
+      {!isLoading && data.length === 0 && (
+        <p className="text-xs text-[var(--text-muted)] italic">No custom dates yet. A licence renewal, the date you first met, the day their business opened.</p>
+      )}
+      {data.map((d) => (
+        <div key={d.id} className="flex items-center gap-2 group">
+          <div className="flex-1 min-w-0">
+            <p className="text-sm text-[var(--text-primary)] truncate">{d.label}</p>
+            <p className="text-[11px] text-[var(--text-muted)]">
+              {formatDate(d.date, { month: "long", day: "numeric", ...(d.recurrence === "once" ? { year: "numeric" } : {}) })}
+              {d.recurrence === "annual" ? " · every year" : " · once"}
+            </p>
+          </div>
+          <button
+            type="button"
+            aria-label={`Remove ${d.label}`}
+            onClick={() => remove.mutate(d.id)}
+            className="text-[var(--text-muted)] hover:text-[var(--coral)] opacity-0 group-hover:opacity-100 transition-opacity"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      ))}
+
+      <div className="pt-2 border-t border-[var(--surface-border)] space-y-2">
+        <input value={label} onChange={e => setLabel(e.target.value)} placeholder="What is the date?" className="input-premium text-sm w-full" />
+        <div className="flex gap-2">
+          <input type="date" value={date} onChange={e => setDate(e.target.value)} className="input-premium text-sm flex-1" />
+          <select value={recurrence} onChange={e => setRecurrence(e.target.value as "annual" | "once")} className="input-premium text-sm">
+            <option value="annual">Every year</option>
+            <option value="once">Once</option>
+          </select>
+        </div>
+        <GlassButton size="sm" disabled={!label.trim() || !date} loading={add.isPending} onClick={() => { setError(null); add.mutate() }}>
+          <Plus className="w-3.5 h-3.5" /> Add date
+        </GlassButton>
+        {error && <p className="text-xs text-[var(--coral)]">{error}</p>}
+      </div>
+    </div>
+  )
+}
+
 const SECTIONS: { key: Section; label: string; icon: React.ElementType }[] = [
   { key: "overview",  label: "Overview",  icon: Star },
+  { key: "dates",     label: "Dates",     icon: CalendarClock },
   { key: "family",    label: "Family",    icon: Heart },
   { key: "business",  label: "Business",  icon: Briefcase },
   { key: "lifestyle", label: "Lifestyle", icon: Dumbbell },
@@ -185,6 +265,28 @@ export default function ContactSlidePanel({ contact, onClose, onUpdate }: Props)
               <Field label="Hobbies" value={contact.hobbies} field="hobbies" contactId={contact.id} onUpdate={onUpdate} />
               <Field label="Vacation Style" value={contact.vacationHabits} field="vacationHabits" contactId={contact.id} onUpdate={onUpdate} />
               <Field label="Proudest Achievement" value={contact.proudestAchievement} field="proudestAchievement" contactId={contact.id} onUpdate={onUpdate} multiline />
+            </Section>
+          </>
+        )}
+
+        {activeSection === "dates" && (
+          <>
+            <Section title="The money dates" icon={CalendarClock}>
+              <p className="text-xs text-[var(--text-muted)] -mt-1 mb-1">
+                A birthday is a courtesy. These are the dates a renewal or a referral turns on.
+              </p>
+              <Field label="Policy renewal" value={contact.policyRenewalDate} field="policyRenewalDate" contactId={contact.id} onUpdate={onUpdate} placeholder="YYYY-MM-DD" />
+              <Field label="Policy type" value={contact.policyType} field="policyType" contactId={contact.id} onUpdate={onUpdate} />
+              <Field label="Loan closing date" value={contact.loanClosedDate} field="loanClosedDate" contactId={contact.id} onUpdate={onUpdate} placeholder="YYYY-MM-DD" />
+              <Field label="Loan type" value={contact.loanType} field="loanType" contactId={contact.id} onUpdate={onUpdate} />
+              <Field label="Home purchase date" value={contact.homePurchaseDate} field="homePurchaseDate" contactId={contact.id} onUpdate={onUpdate} placeholder="YYYY-MM-DD" />
+            </Section>
+            <Section title="Personal dates" icon={Heart}>
+              <Field label="Birthday" value={contact.birthdate} field="birthdate" contactId={contact.id} onUpdate={onUpdate} placeholder="YYYY-MM-DD" />
+              <Field label="Wedding anniversary" value={contact.anniversary} field="anniversary" contactId={contact.id} onUpdate={onUpdate} placeholder="YYYY-MM-DD" />
+            </Section>
+            <Section title="Custom dates" icon={CalendarClock}>
+              <CustomDates contactId={contact.id} seeded={contact.customDates} />
             </Section>
           </>
         )}

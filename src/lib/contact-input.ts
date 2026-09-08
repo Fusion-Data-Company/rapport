@@ -15,6 +15,12 @@ export const ContactInput = z.object({
   phone: str(40),
   birthdate: dateStr,
   anniversary: dateStr,
+  // The money dates
+  policyRenewalDate: dateStr,
+  policyType: str(80),
+  loanClosedDate: dateStr,
+  loanType: str(80),
+  homePurchaseDate: dateStr,
   placeHometown: str(120),
   spouseName: str(120),
   spouseOccupation: str(120),
