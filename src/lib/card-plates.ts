@@ -27,6 +27,20 @@ const HOME: Plate = { file: "home.jpg", foil: GOLD, subline: null }
 const THANKS: Plate = { file: "thanks.jpg", foil: DEEP_GOLD, subline: null }
 const NEUTRAL: Plate = { file: "neutral.jpg", foil: DEEP_GOLD, subline: null }
 
+// Hand-chosen occasions. A renewal calendar cannot know a client had a baby, buried a
+// parent or finally retired, and those are the notes an agent gets remembered for.
+const BABY_BOY: Plate = { file: "baby-boy.jpg", foil: DEEP_GOLD, subline: "It's a Boy" }
+const BABY_GIRL: Plate = { file: "baby-girl.jpg", foil: DEEP_GOLD, subline: "It's a Girl" }
+const WEDDING: Plate = { file: "wedding.jpg", foil: DEEP_GOLD, subline: "On Your Wedding Day" }
+const GRADUATION: Plate = { file: "graduation.jpg", foil: GOLD, subline: "On Your Graduation" }
+const RETIREMENT: Plate = { file: "retirement.jpg", foil: GOLD, subline: "The Next Part Is Yours" }
+const GETWELL: Plate = { file: "getwell.jpg", foil: DEEP_GOLD, subline: "Thinking of You" }
+// Sympathy carries no subline. Anything added under those three words reads as filler,
+// and the one card in the set where nothing should be added is this one.
+const SYMPATHY: Plate = { file: "sympathy.jpg", foil: DEEP_GOLD, subline: null }
+const CONGRATS: Plate = { file: "congrats.jpg", foil: GOLD, subline: "Well Earned" }
+const HOLIDAY: Plate = { file: "holiday.jpg", foil: GOLD, subline: "With Warmest Wishes" }
+
 /** OccasionType (src/lib/occasions.ts) to plate. Anything unmapped gets the neutral one,
  *  which is deliberately occasion-free rather than a wrong occasion. */
 const BY_OCCASION: Record<string, Plate> = {
@@ -40,14 +54,48 @@ const BY_OCCASION: Record<string, Plate> = {
   review_request: THANKS,
   sports_win: NEUTRAL,
   sports_loss: NEUTRAL,
+  new_baby_boy: BABY_BOY,
+  new_baby_girl: BABY_GIRL,
+  new_baby: BABY_BOY,
+  wedding: WEDDING,
+  graduation: GRADUATION,
+  retirement: RETIREMENT,
+  new_home: HOME,
+  get_well: GETWELL,
+  sympathy: SYMPATHY,
+  congratulations: CONGRATS,
+  holiday: HOLIDAY,
+  thank_you: THANKS,
 }
+
+/** Every occasion the card system can set, for the gallery and the send picker. */
+export const CARD_OCCASIONS: { id: string; label: string }[] = [
+  { id: "birthday", label: "Birthday" },
+  { id: "anniversary", label: "Anniversary" },
+  { id: "policy_renewal", label: "Renewal" },
+  { id: "home_anniversary", label: "Home anniversary" },
+  { id: "new_home", label: "New home" },
+  { id: "review_request", label: "Thank you" },
+  { id: "congratulations", label: "Congratulations" },
+  { id: "wedding", label: "Wedding" },
+  { id: "new_baby_boy", label: "It's a boy" },
+  { id: "new_baby_girl", label: "It's a girl" },
+  { id: "graduation", label: "Graduation" },
+  { id: "retirement", label: "Retirement" },
+  { id: "get_well", label: "Get well" },
+  { id: "sympathy", label: "Sympathy" },
+  { id: "holiday", label: "Holidays" },
+]
 
 export function plateFor(occasion: string): Plate {
   return BY_OCCASION[occasion] ?? NEUTRAL
 }
 
 /** Every plate that ships, for the gallery and for a build-time existence check. */
-export const ALL_PLATES: Plate[] = [BIRTHDAY, ANNIVERSARY, RENEWAL, HOME, THANKS, NEUTRAL]
+export const ALL_PLATES: Plate[] = [
+  BIRTHDAY, ANNIVERSARY, RENEWAL, HOME, THANKS, NEUTRAL,
+  BABY_BOY, BABY_GIRL, WEDDING, GRADUATION, RETIREMENT, GETWELL, SYMPATHY, CONGRATS, HOLIDAY,
+]
 
 /**
  * The card renderer's parameters are signed, because an unsigned one is a tool for

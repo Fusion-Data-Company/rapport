@@ -62,6 +62,21 @@ export function occasionLine(occasion: string, name: string): string {
     case "review_request":      return `Thank You, ${who}`
     case "sports_win":          return `What a Game, ${who}`
     case "sports_loss":         return `Next One's Ours, ${who}`
+    // The occasions below are not scheduled from a date on the contact - they are
+    // chosen by hand when a client's life does something a renewal calendar cannot
+    // know about. They are the ones an agent actually gets thanked for.
+    case "new_baby_boy":
+    case "new_baby_girl":
+    case "new_baby":            return `Congratulations, ${who}`
+    case "wedding":             return `Congratulations, ${who}`
+    case "graduation":          return `Congratulations, ${who}`
+    case "retirement":          return `Happy Retirement, ${who}`
+    case "new_home":            return `Welcome Home, ${who}`
+    case "get_well":            return `Get Well Soon, ${who}`
+    case "sympathy":            return `With Deepest Sympathy`
+    case "congratulations":     return `Congratulations, ${who}`
+    case "holiday":             return `Season's Greetings, ${who}`
+    case "thank_you":           return `Thank You, ${who}`
     default:                    return `Thinking of You, ${who}`
   }
 }
