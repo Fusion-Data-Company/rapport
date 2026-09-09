@@ -97,13 +97,7 @@ function centredPath(
   }
 
   // Tracked capitals are set glyph by glyph, because opentype applies no tracking.
-  //
-  // Each glyph is kept as its OWN path string rather than concatenated into one, and
-  // that is load-bearing, not tidiness. Joining nineteen subpaths into a single `d`
-  // attribute made librsvg render "FUSION DATA COMPANY" as "FUSIO" and stop mid-letter:
-  // measured ink 99px wide against 424px of geometry. The path data was verified
-  // complete, and the identical glyphs drawn as nineteen <path> elements measured the
-  // full 424px. One element per glyph is the shape that survives the renderer.
+  // Kept for completeness; the subline no longer uses this branch (see setTracked below).
   const total = measure(used)
   let x = cx - total / 2
   const parts: string[] = []
@@ -111,6 +105,55 @@ function centredPath(
     const d = font.getPath(ch, x, y, used).toPathData(2)
     if (d) parts.push(d)
     x += font.getAdvanceWidth(ch, used) + letterSpacing * used
+  }
+  return { d: parts, width: total }
+}
+
+/**
+ * The small tracked line, set as ONE PATH PER WORD.
+ *
+ * Three arrangements were tried and two shipped bugs before this one:
+ *
+ *   one path for the whole line   librsvg truncates a long `d` attribute.
+ *                                 "FUSION DATA COMPANY" drew as "FUSIO" and stopped
+ *                                 mid-letter — 99px of ink against 424px of geometry,
+ *                                 with the path data verified complete.
+ *   one path per glyph            fixed the truncation and broke Cormorant's "N",
+ *                                 which rendered as a bare vertical stem.
+ *   thin spaces, one path         fixed the "N" and made the string long enough to hit
+ *                                 the truncation again. "THE NEXT PART IS YOURS"
+ *                                 reached production reading "THE NEXT P-".
+ *
+ * Per word satisfies both constraints at once: each word is a single getPath call, which
+ * is the call that renders every glyph correctly, and no single path gets near the length
+ * that gets cut. Tracking inside a word comes from thin spaces between the letters;
+ * tracking between words comes from the advance.
+ */
+function setTracked(
+  font: Font,
+  text: string,
+  cx: number,
+  y: number,
+  size: number,
+  maxWidth: number,
+): { d: string[]; width: number } {
+  const THIN = "\u2009"
+  const words = text.split(/\s+/).filter(Boolean).map((w) => w.split("").join(THIN))
+  const gap = THIN + THIN + THIN // the space between words, in thin spaces
+
+  const line = words.join(gap)
+  let used = size
+  const full = font.getAdvanceWidth(line, size)
+  if (full > maxWidth) used = size * (maxWidth / full)
+
+  const total = font.getAdvanceWidth(line, used)
+  let x = cx - total / 2
+  const parts: string[] = []
+  for (let i = 0; i < words.length; i++) {
+    const d = font.getPath(words[i], x, y, used).toPathData(2)
+    if (d) parts.push(d)
+    x += font.getAdvanceWidth(words[i], used)
+    if (i < words.length - 1) x += font.getAdvanceWidth(gap, used)
   }
   return { d: parts, width: total }
 }
@@ -163,13 +206,7 @@ export async function composeCard(opts: ComposeOptions): Promise<Buffer> {
   if (opts.subline) {
     const subSize = W * 0.0225
     const subBaseline = scriptBaseline + H * 0.085
-    // Tracked with real spaces rather than programmatic letter-spacing. Setting the
-    // caps glyph-by-glyph to fake tracking produced a broken "N" in Cormorant - it came
-    // out as a bare vertical stem - in every arrangement tried: joined into one `d`, as
-    // separate <path> elements, and as separate overlays. One getPath() call over the
-    // whole string renders every glyph correctly, so the tracking is done in the string.
-    const tracked = opts.subline.toUpperCase().split("").join("\u2009")
-    paths.push(...centredPath(small, tracked, cx, subBaseline, subSize, W * 0.62).d)
+    paths.push(...setTracked(small, opts.subline.toUpperCase(), cx, subBaseline, subSize, W * 0.62).d)
   }
 
   // Every glyph is its own <path> element inside ONE document, and both halves of that
