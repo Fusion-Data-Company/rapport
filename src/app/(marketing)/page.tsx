@@ -3,6 +3,7 @@ import {
   Heart, ArrowRight, CheckCircle, Mail, CalendarClock, Upload, ShieldCheck, Check,
   Pencil, X as XIcon, Gauge, Star, Plug,
 } from "lucide-react"
+import { Reveal, Counter, Pinned, Marquee, Grain } from "@/elite/motion"
 
 const isDemo = process.env.NEXT_PUBLIC_DEMO_MODE === "true"
 
@@ -45,6 +46,32 @@ const css = `
 .rp table.cmp th{color:#fff;font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.06em}
 .rp table.cmp td:first-child{color:var(--ink);font-weight:600}
 @media(max-width:860px){.rp .grid3{grid-template-columns:1fr}.rp .grid2{grid-template-columns:1fr}.rp .sec{padding:52px 0}}
+
+/* ── The card set: the artefact, and the whole of the argument ───────────────
+   A greeting card is portrait and is NEVER cropped. object-fit:cover on a 3:2
+   tile cut the printed name off the bottom of every one of them, which is the
+   one thing on this page a buyer is here to see. */
+.rp .cardset{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.rp .cardset figure{margin:0;border-radius:14px;overflow:hidden;background:rgba(9,17,31,.7);border:1px solid var(--line);transition:transform 420ms cubic-bezier(.22,1,.36,1),border-color 420ms,box-shadow 420ms}
+.rp .cardset figure:hover{transform:translateY(-4px);border-color:rgba(43,168,162,.45);box-shadow:0 26px 48px -24px rgba(0,0,0,.85)}
+.rp .cardset img{display:block;width:100%;aspect-ratio:4/5;object-fit:contain;background:#fff}
+.rp .cardset figcaption{padding:11px 13px}
+.rp .cardset .line{display:block;font-family:Georgia,serif;font-style:italic;font-size:13.5px;color:#fff;line-height:1.4}
+.rp .cardset .occ{display:block;margin-top:4px;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:#9BB0C6}
+@media(max-width:860px){.rp .cardset{grid-template-columns:repeat(2,1fr)}}
+
+/* ── The numbers band ──────────────────────────────────────────────────────── */
+.rp .numbers{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.rp .numbers .n{padding:22px 20px;border-radius:16px;background:rgba(15,28,48,.7);border:1px solid var(--line)}
+.rp .numbers .fig{font-family:'JetBrains Mono',ui-monospace,monospace;font-variant-numeric:tabular-nums;font-size:clamp(28px,4vw,42px);line-height:1.05;font-weight:700;color:var(--teal3)}
+.rp .numbers .fig.gold{color:var(--gold)}
+.rp .numbers .cap{margin:8px 0 0;font-size:13px;line-height:1.6;color:var(--dim)}
+@media(max-width:860px){.rp .numbers{grid-template-columns:repeat(2,1fr)}}
+
+/* ── The occasion belt ─────────────────────────────────────────────────────── */
+.rp .belt{border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:14px 0;background:rgba(9,17,31,.6)}
+.rp .belt span{display:inline-flex;align-items:center;gap:10px;padding:0 22px;font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:#9BB0C6;white-space:nowrap}
+.rp .belt b{color:var(--gold);font-weight:700}
 `
 
 const DUE_TODAY = [
@@ -70,6 +97,21 @@ const DUE_TODAY = [
   },
 ]
 
+/* The eight cards Rapport actually sends, and the line each one prints. The
+   name in the artwork is set at send time; these are the real files out of
+   public/img/cards, not mockups. A buyer should be able to see the product
+   before signing up, because the card IS the product. */
+const CARD_SET = [
+  ["policy-renewal",     "Here's to Another Year, Rob",     "Policy renewal"],
+  ["loan-anniversary",   "Happy Closing Anniversary, Rob",  "Loan anniversary"],
+  ["home-anniversary",   "Happy Home Anniversary, Rob",     "Home anniversary"],
+  ["months-since-close", "Good to Know You, Rob",           "Months since close"],
+  ["birthday",           "Happy Birthday, Rob",             "Birthday"],
+  ["child-birthday",     "Happy Birthday, Maddie",          "A child's birthday"],
+  ["anniversary",        "Happy Anniversary, Rob",          "Wedding anniversary"],
+  ["review-request",     "Thank You, Rob",                  "Review request"],
+] as const
+
 const SAMPLE_NOTE = `Dana,
 
 Your commercial auto comes up on the 4th of November. Nothing to do yet, but I have it on my calendar and I will pull the numbers a week out so we can look at it together.
@@ -80,6 +122,10 @@ export default function HomePage() {
   return (
     <div className="rp">
       <style dangerouslySetInnerHTML={{ __html: css }} />
+      {/* Inline-SVG noise, no network request, pointer-events:none, and skipped
+          entirely on saveData — grain is the definition of a nice-to-have and
+          it is a full-viewport composited layer. */}
+      <Grain grain dust />
 
       {/* Nav */}
       <nav className="wrap" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "20px 24px" }}>
@@ -150,8 +196,78 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* The numbers, counted up */}
+      <section className="sec wrap" style={{ paddingTop: 0 }}>
+        <Reveal>
+          <div className="numbers">
+            <div className="n">
+              <p className="fig">$<Counter to={39} /></p>
+              <p className="cap">A month, up to a thousand contacts. No onboarding call, no annual contract, cancel from the billing portal.</p>
+            </div>
+            <div className="n">
+              <p className="fig gold">$<Counter to={349} /></p>
+              <p className="cap">Where the agency platforms start, per Capterra&apos;s listing for Levitate — with a specialist you schedule a call with.</p>
+            </div>
+            <div className="n">
+              <p className="fig"><Counter to={8} /></p>
+              <p className="cap">Occasions watched, and five of them are the money dates rather than birthdays.</p>
+            </div>
+            <div className="n">
+              <p className="fig gold"><Counter to={14} /></p>
+              <p className="cap">Days free, no card to start. Your first batch is held until you have read every note in it.</p>
+            </div>
+          </div>
+        </Reveal>
+      </section>
+
+      {/* THE ARTEFACT — the card set */}
+      <section id="cards" className="sec wrap" style={{ paddingTop: 0 }}>
+        <Reveal>
+          <span className="kick">What arrives</span>
+          <h2>Every note carries a card, and the card carries their name.</h2>
+          <p className="sub" style={{ marginBottom: 24 }}>
+            These are the eight Rapport cards, exactly as they go out. The name is printed into the
+            artwork in gold foil script at send time — not typed underneath it, not a mail-merge
+            field in the body. Add a line about the person before you approve and it goes into the
+            brief: the puppy in the wreath and the horseshoe in the confetti both came from one.
+          </p>
+        </Reveal>
+        <div className="cardset">
+          {CARD_SET.map(([file, line, occ], i) => (
+            <Reveal key={file} delay={i * 70}>
+              <figure>
+                <img src={`/img/cards/${file}-thumb.jpg`} alt={`A Rapport card reading ${line}`}
+                  loading="lazy" width={480} height={600} />
+                <figcaption>
+                  <span className="line">&ldquo;{line}&rdquo;</span>
+                  <span className="occ">{occ}</span>
+                </figcaption>
+              </figure>
+            </Reveal>
+          ))}
+        </div>
+        <p style={{ fontSize: 12.5, color: "#9BB0C6", marginTop: 14 }}>
+          Rob and Maddie are the demo names. Yours are set from the contact the note is for.
+        </p>
+      </section>
+
+      {/* The occasion belt. Two copies, -50% travel, pauses on hover and on focus. */}
+      <div className="belt">
+        <Marquee speed={44} ariaLabel="The occasions Rapport watches">
+          {[
+            "Policy renewal", "Loan anniversary", "Home anniversary", "Months since close",
+            "Birthday", "A child's birthday", "Wedding anniversary", "Review request",
+            "Any date you choose", "Their team won",
+          ].map((o) => (
+            <span key={o}><b>·</b> {o}</span>
+          ))}
+        </Marquee>
+      </div>
+
       {/* The money dates */}
       <section className="sec wrap" style={{ paddingTop: 0 }}>
+        <div className="section-rule"><span className="section-rule__mark" /></div>
+        <Reveal>
         <span className="kick">The money dates</span>
         <h2>A birthday is a courtesy. These are the ones that pay.</h2>
         <p className="sub" style={{ marginBottom: 26 }}>
@@ -159,6 +275,7 @@ export default function HomePage() {
           closing date on the same footing, because those are the days a book of business actually
           turns on.
         </p>
+        </Reveal>
         <div className="grid3">
           {[
             ["Policy renewal", "Fires a month before the date, not on it. You get the conversation while it is still a review and not a bill. Set the lead time to whatever your carriers need."],
@@ -167,19 +284,21 @@ export default function HomePage() {
             ["Birthdays, anniversaries, kids", "Theirs, their wedding anniversary, and their children's birthdays, each written to the parent."],
             ["Any date you care about", "A licence renewal, the day their shop opened, the anniversary of the day you met. Yearly or once."],
             ["Their team won", "The morning after, from the live scoreboard. One line, no business in it."],
-          ].map(([t, d]) => (
-            <div className="card" key={t}>
-              <CalendarClock size={20} color="#FFD23F" />
-              <h3 style={{ margin: "12px 0 6px", color: "#fff", fontSize: 17 }}>{t}</h3>
-              <p className="sub" style={{ fontSize: 14 }}>{d}</p>
-            </div>
+          ].map(([t, d], i) => (
+            <Reveal key={t} delay={i * 60}>
+              <div className="card hover-lift" style={{ height: "100%" }}>
+                <CalendarClock size={20} color="#FFD23F" />
+                <h3 style={{ margin: "12px 0 6px", color: "#fff", fontSize: 17 }}>{t}</h3>
+                <p className="sub" style={{ fontSize: 14 }}>{d}</p>
+              </div>
+            </Reveal>
           ))}
         </div>
       </section>
 
       {/* The note */}
       <section className="sec wrap" style={{ paddingTop: 0 }}>
-        <div className="grid2">
+        <Reveal><div className="grid2">
           <div>
             <span className="kick">What actually goes out</span>
             <h2>Plain text, from your address, about one person.</h2>
@@ -211,12 +330,12 @@ export default function HomePage() {
               </p>
             </div>
           </div>
-        </div>
+        </div></Reveal>
       </section>
 
       {/* Approval queue */}
       <section className="sec wrap" style={{ paddingTop: 0 }}>
-        <div className="grid2">
+        <Reveal><div className="grid2">
           <div className="shot">
             <div className="bar">
               <CalendarClock size={14} color="#FFD23F" />
@@ -249,25 +368,29 @@ export default function HomePage() {
               switch is one tap in settings.
             </p>
           </div>
-        </div>
+        </div></Reveal>
       </section>
 
 
-      {/* Hero image */}
-      <section className="wrap" style={{ paddingBottom: 8 }}>
-        <figure className="heroshot">
-          <img src="/img/hero-desk.jpg" alt="An agent's desk at the end of the day: the client book open, a note signed by hand, the calendar still up on the laptop." width={1600} height={893} />
-          <figcaption>The part of the job that keeps the book. Rapport does it on the days you are too busy to.</figcaption>
-        </figure>
-      </section>
+      {/* The pinned moment. ONCE per page — it is a held note and it stops
+          working the third time. Under reduced motion .pin-track collapses to
+          100svh and this reads as one ordinary full-bleed statement. */}
+      <Pinned name="desk" eyebrow="The part of the job that keeps the book"
+        attribution="Rapport does it on the days you are too busy to."
+        height="185vh">
+        The renewal went to the agent who remembered.
+      </Pinned>
 
       {/* How */}
       <section id="how" className="sec wrap" style={{ paddingTop: 0 }}>
+        <div className="section-rule"><span className="section-rule__mark" /></div>
+        <Reveal>
         <span className="kick">How it works</span>
         <h2>Three things, then it runs itself</h2>
         <figure className="flowshot">
           <img src="/img/how-it-works.jpg" alt="Five steps: import your book, dates are watched, a note is drafted, you approve it, it is sent from your inbox." width={1600} height={575} />
         </figure>
+        </Reveal>
         <div className="grid3" style={{ marginTop: 24 }}>
           <div className="card step">
             <b>1</b><Upload size={20} color="#3CC4BD" />
@@ -334,12 +457,15 @@ export default function HomePage() {
 
       {/* Pricing */}
       <section id="pricing" className="sec wrap" style={{ paddingTop: 0 }}>
+        <div className="section-rule"><span className="section-rule__mark" /></div>
+        <Reveal>
         <span className="kick">Pricing</span>
         <h2>Two numbers, no call</h2>
         <p className="sub" style={{ marginBottom: 26 }}>
           Fourteen days free, no card to start. If one renewal a year stays because of a note you
           would not otherwise have sent, it has paid for itself several times over.
         </p>
+        </Reveal>
         <div className="grid2" style={{ alignItems: "stretch" }}>
           <div className="card" style={{ borderColor: "rgba(43,168,162,.4)", background: "rgba(43,168,162,.08)" }}>
             <p style={{ fontSize: 13, fontWeight: 700, color: "#3CC4BD", margin: "0 0 4px" }}>Solo</p>
@@ -447,7 +573,7 @@ export default function HomePage() {
 
       {/* CTA */}
       <section className="sec wrap" style={{ paddingTop: 0, textAlign: "center" }}>
-        <div className="card" style={{ padding: 40 }}>
+        <div className="card inner-ring corner-ticks" style={{ padding: 40 }}>
           <ShieldCheck size={26} color="#3CC4BD" />
           <h2 style={{ marginTop: 12 }}>Be the one who remembered</h2>
           <p className="sub" style={{ margin: "0 auto 22px" }}>Load the book tonight. The first notes are waiting for you in the morning.</p>

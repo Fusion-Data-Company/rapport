@@ -5,6 +5,10 @@ const config: Config = {
     "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
+    // The kit's motion components carry Tailwind utilities of their own. Without
+    // this glob Pinned renders as an unstyled div and the pin silently does
+    // nothing — no error, no console line.
+    "./src/elite/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
     extend: {
