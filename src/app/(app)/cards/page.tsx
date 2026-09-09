@@ -7,6 +7,7 @@ import { GlassButton } from "@/components/ui/glass-button"
 import { Upload, CreditCard, Cake, Heart, Baby, FileText, KeyRound, Landmark, Coffee, Star, X, Plus, Eye } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { CardTemplateRow } from "@/lib/types"
+import { Reveal, StatusChip } from "@/elite/motion"
 
 // The occasions the scheduler can actually raise. Anything else is a card nobody
 // will ever send, and the old sports-CRM list was exactly that.
@@ -62,10 +63,11 @@ export default function CardsPage() {
 
   return (
     <div className="p-6 max-w-6xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-6 gap-4 flex-wrap">
         <div>
-          <h1 className="text-h1 text-white" style={{ fontFamily: "'Playfair Display', serif" }}>Card Gallery</h1>
-          <p className="text-sm text-[var(--text-secondary)]">
+          <p className="stat-label">The artefact</p>
+          <h1 className="rp-h1 mt-1.5">Card Gallery</h1>
+          <p className="text-[15px] leading-[1.6] mt-1.5 max-w-[62ch]" style={{ color: "var(--text-secondary)" }}>
             Every note goes out with a card, and the card carries the contact&apos;s own name.
             These are the Rapport cards for each occasion; the name is set at send time.
           </p>
@@ -81,17 +83,18 @@ export default function CardsPage() {
           made by the same prompt the send path builds - same brief, different name and
           a different line from the sender - so the gallery is not describing a feature,
           it is showing two of its outputs. */}
-      <GlassCard className="p-4 sm:p-5 mb-6">
+      <Reveal>
+      <GlassCard className="p-4 sm:p-5 mb-6 inner-ring glossy-top">
         <div className="flex flex-col sm:flex-row gap-5 items-start">
           <div className="flex gap-3 shrink-0">
-            <figure className="w-24 sm:w-28">
+            <figure className="w-24 sm:w-28 hover-lift">
               <img src="/img/cards/examples/runtime-rob.jpg" alt="Happy Birthday, Rob"
                 className="w-full rounded-lg border border-[var(--surface-border)] shadow-[var(--shadow-md)] bg-white" />
               <figcaption className="mt-1.5 text-[10px] text-[var(--text-muted)] leading-tight">
                 &ldquo;he just got a golden retriever puppy&rdquo;
               </figcaption>
             </figure>
-            <figure className="w-24 sm:w-28">
+            <figure className="w-24 sm:w-28 hover-lift">
               <img src="/img/cards/examples/runtime-maddie.jpg" alt="Happy Birthday, Maddie"
                 className="w-full rounded-lg border border-[var(--surface-border)] shadow-[var(--shadow-md)] bg-white" />
               <figcaption className="mt-1.5 text-[10px] text-[var(--text-muted)] leading-tight">
@@ -100,9 +103,7 @@ export default function CardsPage() {
             </figure>
           </div>
           <div className="min-w-0">
-            <p className="text-[10px] uppercase tracking-[0.18em] text-[var(--gold)] font-semibold">
-              Made for the person
-            </p>
+            <p className="stat-label" style={{ color: "var(--gold)" }}>Made for the person</p>
             <h2 className="text-white font-semibold mt-1" style={{ fontFamily: "'Playfair Display', serif" }}>
               The name is printed on the card, not typed under it
             </h2>
@@ -116,6 +117,7 @@ export default function CardsPage() {
           </div>
         </div>
       </GlassCard>
+      </Reveal>
 
       {/* Occasion tabs */}
       <div className="flex flex-wrap gap-2 mb-6">
@@ -157,11 +159,18 @@ export default function CardsPage() {
 
       {/* Cards grid */}
       {cards.length === 0 ? (
-        <div className="flex flex-col items-center gap-3 py-20">
-          <CreditCard className="w-12 h-12 text-[var(--text-muted)]" />
-          <p className="text-[var(--text-muted)]">No {activeOccasion.replace("_", " ")} cards yet</p>
+        <div className="elite-empty">
+          <span className="elite-empty__mark"><CreditCard className="w-5 h-5" /></span>
+          <p className="elite-empty__title">
+            No {activeOccasion.replace(/_/g, " ")} card of your own yet
+          </p>
+          <p className="elite-empty__body">
+            Rapport ships a card for every occasion it can raise, and the contact&apos;s name is
+            printed on it at send time. Upload your own artwork here and it is used instead —
+            a photograph of your office, your agency mark, anything 4:5 and portrait.
+          </p>
           <GlassButton size="sm" onClick={() => document.getElementById("card-upload")?.click()}>
-            <Plus className="w-3.5 h-3.5" /> Upload First Card
+            <Plus className="w-3.5 h-3.5" /> Upload the first one
           </GlassButton>
         </div>
       ) : (
@@ -174,7 +183,7 @@ export default function CardsPage() {
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.9 }}
-                className="group relative"
+                className="group relative hover-lift"
               >
                 {/* A greeting card is portrait, and it is never cropped: object-cover on
                     a 3:2 tile cut the printed name off the bottom of every one of them. */}
@@ -200,7 +209,7 @@ export default function CardsPage() {
                   </div>
                   {card.isSystem && (
                     <div className="absolute top-2 left-2">
-                      <span className="badge badge-teal text-[9px]">Rapport</span>
+                      <StatusChip status="ok" className="rp-chip-xs">Rapport</StatusChip>
                     </div>
                   )}
                 </GlassCard>

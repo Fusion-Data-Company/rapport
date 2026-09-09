@@ -605,3 +605,16 @@ h3, h4, h5, h6 {
   .rp-tiles { grid-template-columns: 1fr; }
   .rp-queue-card { width: 52px; }
 }
+
+/* ── The contacts grid ─────────────────────────────────────────────────────
+   .elite-table carries the rules; these are the two things a virtualised,
+   fixed-layout grid needs on top of them. */
+.rp-grid tbody td { font-size: 12.5px; }
+.rp-grid thead th { background: var(--rp-surface-2); }
+.rp-grid thead th:hover { color: var(--text-primary); }
+.rp-chip-xs { font-size: 10px; padding: 2px 7px; letter-spacing: .02em; }
+.rp-dark-row { font-size: 11.5px; font-style: italic; color: var(--text-faint); }
+
+/* The soft contact cap. A notice, never a block. */
+.rp-cap { display: block; width: 120px; height: 5px; border-radius: 999px; background: var(--rp-surface-sunk); box-shadow: inset 0 0 0 1px var(--rp-line); overflow: hidden; }
+.rp-cap > span { display: block; height: 100%; background: linear-gradient(90deg, var(--teal), var(--gold)); transition: width 900ms cubic-bezier(.22,1,.36,1); }

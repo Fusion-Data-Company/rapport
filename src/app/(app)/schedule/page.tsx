@@ -8,6 +8,9 @@ import {
   Sparkles, ImageIcon,
 } from "lucide-react"
 import { formatDate } from "@/lib/utils"
+import { Reveal, StatusChip, SkeletonBlock } from "@/elite/motion"
+import type { Status } from "@/elite/motion"
+import { cardThumbFor } from "@/lib/occasion-card"
 import type { ScheduleItem } from "@/app/api/schedule/upcoming/route"
 import type { ApproveResult } from "@/app/api/schedule/approve/route"
 
@@ -28,6 +31,12 @@ const STATUS_LABEL: Record<string, string> = {
   failed: "failed",
   skipped: "skipped",
   pending: "queued",
+}
+
+/** Status as a colour+glow pair, in its own column. Never raw text. */
+const STATUS_TONE: Record<string, Status> = {
+  pending_approval: "warn", pending: "warn", approved: "info", deferred: "idle",
+  projected: "idle", sent: "ok", failed: "bad", skipped: "idle",
 }
 
 function name(item: ScheduleItem) {
@@ -314,13 +323,18 @@ export default function SchedulePage() {
 
   return (
     <div className="p-4 sm:p-6 max-w-3xl mx-auto pb-24">
-      <div className="flex items-center gap-3 mb-1">
-        <Calendar className="w-5 h-5 text-[var(--gold)]" />
-        <h1 className="text-h1 text-white" style={{ fontFamily: "'Playfair Display', serif" }}>Today&apos;s notes</h1>
-      </div>
-      <p className="text-sm text-[var(--text-muted)] mb-5">
-        Read them, change anything that is not how you would put it, then approve. Two minutes.
-      </p>
+      <Reveal>
+        <p className="stat-label">
+          {new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
+        </p>
+        <div className="flex items-center gap-3 mt-1.5 mb-1">
+          <Calendar className="w-5 h-5" style={{ color: "var(--gold)" }} />
+          <h1 className="rp-h1">Today&apos;s notes</h1>
+        </div>
+        <p className="text-[15px] leading-[1.6] mb-5" style={{ color: "var(--text-secondary)" }}>
+          Read them, change anything that is not how you would put it, then approve. Two minutes.
+        </p>
+      </Reveal>
 
       {flash && (
         <GlassCard className={`p-4 mb-4 flex items-start gap-2 ${flash.ok ? "border-[var(--teal)]" : "border-[var(--coral)]"}`}>
@@ -329,11 +343,12 @@ export default function SchedulePage() {
         </GlassCard>
       )}
 
+      {/* Text-shaped skeletons over a tinted surface, not a spinner: a spinner
+          says "something is happening", a skeleton says what is arriving. */}
       {isLoading && (
-        <GlassCard className="p-8 flex items-center justify-center gap-2">
-          <Loader2 className="w-4 h-4 animate-spin text-[var(--text-muted)]" />
-          <p className="text-sm text-[var(--text-muted)]">Loading your schedule</p>
-        </GlassCard>
+        <div className="space-y-3">
+          {[0, 1, 2].map(i => <SkeletonBlock key={i} height={132} radius={18} />)}
+        </div>
       )}
 
       {isError && (
@@ -355,16 +370,23 @@ export default function SchedulePage() {
                 </GlassButton>
               </div>
               <div className="space-y-3">
-                {held.map((item) => <ReviewCard key={item.id} item={item} onDone={report} />)}
+                {held.map((item, i) => (
+                  <Reveal key={item.id} delay={i * 60}><ReviewCard item={item} onDone={report} /></Reveal>
+                ))}
               </div>
             </>
           ) : (
-            <GlassCard className="p-8 flex flex-col items-center gap-2 text-center">
-              <CheckCircle2 className="w-10 h-10 text-[var(--teal)]" />
-              <p className="text-white font-semibold">Nothing waiting on you</p>
-              <p className="text-sm text-[var(--text-muted)] max-w-sm">
-                When a note is due it appears here for a read before it goes out. What is coming is below.
-              </p>
+            <GlassCard className="p-0">
+              <div className="elite-empty">
+                <span className="elite-empty__mark"><CheckCircle2 className="w-5 h-5" /></span>
+                <p className="elite-empty__title">Nothing is waiting on you</p>
+                <p className="elite-empty__body">
+                  When a note is due it appears here with its card for a read before it goes out.
+                  {upcoming.length > 0
+                    ? ` ${upcoming.length} ${upcoming.length === 1 ? "occasion is" : "occasions are"} inside the next thirty days — they are listed below.`
+                    : " Add a renewal or closing date to a contact and this fills itself."}
+                </p>
+              </div>
             </GlassCard>
           )}
 
@@ -377,23 +399,31 @@ export default function SchedulePage() {
 
             {showUpcoming && (
               upcoming.length === 0 ? (
-                <GlassCard className="p-8 flex flex-col items-center gap-2 text-center">
-                  <Calendar className="w-8 h-8 text-[var(--text-muted)]" />
-                  <p className="text-sm text-[var(--text-muted)]">Nothing scheduled in the next 30 days.</p>
-                  <p className="text-xs text-[var(--text-muted)]">Add a renewal or closing date to a contact and it will show up here.</p>
+                <GlassCard className="p-0">
+                  <div className="elite-empty">
+                    <span className="elite-empty__mark"><Calendar className="w-5 h-5" /></span>
+                    <p className="elite-empty__title">The next thirty days are clear</p>
+                    <p className="elite-empty__body">
+                      Rapport raises an occasion from a date on a contact — a birthday, a policy
+                      renewal, a closing anniversary, a check-in months after a file closed. Put one
+                      date on one contact and it appears here tonight.
+                    </p>
+                  </div>
                 </GlassCard>
               ) : (
                 <div className="space-y-2">
                   {upcoming.map((item) => (
                     <GlassCard
                       key={item.id ?? `${item.contactId}-${item.occasionType}-${item.scheduledDate}`}
-                      className="p-3 sm:p-4 flex items-center gap-3 sm:gap-4"
+                      className="p-3 sm:p-4 flex items-center gap-3 sm:gap-4 hover-lift"
                     >
                       <DateChip date={item.scheduledDate} tint={color(item)} />
-                      {item.cardImageUrl
-                        ? <img src={item.cardImageUrl} alt={item.cardLine}
-                            className="w-9 rounded-md border border-[var(--surface-border)] shrink-0 bg-white" />
-                        : <div className="w-1 h-8 rounded-full shrink-0" style={{ background: color(item) }} />}
+                      {/* A projected send has no card row yet; the Rapport card
+                          shipped for that occasion stands in, so no row is a grey box. */}
+                      <img src={cardThumbFor(item.occasionType, item.cardImageUrl)} alt={item.cardLine}
+                        loading="lazy"
+                        className="w-9 rounded-md shrink-0 bg-white"
+                        style={{ aspectRatio: "4 / 5", objectFit: "contain", boxShadow: "0 4px 12px -4px rgba(0,0,0,.6)" }} />
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold text-white truncate">{name(item)}</p>
                         <p className="text-sm text-[var(--text-muted)] truncate">{item.occasionLabel}</p>
@@ -404,9 +434,10 @@ export default function SchedulePage() {
                           </p>
                         )}
                       </div>
-                      <span className={`badge shrink-0 ${item.status === "sent" ? "badge-green" : item.status === "failed" ? "badge-coral" : "badge-gold"}`}>
+                      <StatusChip status={STATUS_TONE[item.status] ?? "idle"}
+                        live={item.status === "pending_approval"} className="shrink-0">
                         {STATUS_LABEL[item.status] ?? item.status}
-                      </span>
+                      </StatusChip>
                     </GlassCard>
                   ))}
                 </div>

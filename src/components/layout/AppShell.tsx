@@ -35,16 +35,19 @@ export default function AppShell({ children, plan, subscriptionStatus, trialEnds
   return (
     <div className="flex h-screen overflow-hidden" style={{ background: "var(--surface-base)" }}>
       {/* Sidebar */}
-      <aside className="w-56 shrink-0 flex flex-col border-r border-[var(--surface-border)] overflow-y-auto">
+      <aside className="w-56 shrink-0 flex flex-col overflow-y-auto"
+        style={{ background: "var(--rp-surface-1)", boxShadow: "inset -1px 0 0 var(--rp-line)" }}>
         {/* Logo */}
-        <div className="flex items-center gap-2.5 px-5 py-5 border-b border-[var(--surface-border)]">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center"
-            style={{ background: "linear-gradient(135deg, var(--teal), var(--teal-dark))", boxShadow: "var(--shadow-teal-glow)" }}>
-            <Heart className="w-4 h-4 text-white" />
+        <div className="flex items-center gap-2.5 px-5 py-5" style={{ boxShadow: "inset 0 -1px 0 var(--rp-line)" }}>
+          {/* The logo shine holds at 20%/80% — the bar crosses and then WAITS,
+              which is what keeps a header mark from reading as a spinner. */}
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center logo-shine"
+            style={{ background: "linear-gradient(135deg, var(--teal-light), var(--teal))", boxShadow: "var(--shadow-teal-glow)" }}>
+            <Heart className="w-4 h-4" style={{ color: "#04201E" }} />
           </div>
           <div>
             <p className="text-sm font-bold text-white tracking-tight" style={{ fontFamily: "'Playfair Display', serif" }}>Rapport</p>
-            <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-widest">CRM</p>
+            <p className="stat-label" style={{ fontSize: 9 }}>Relationship autopilot</p>
           </div>
         </div>
 
@@ -63,7 +66,7 @@ export default function AppShell({ children, plan, subscriptionStatus, trialEnds
         </nav>
 
         {/* User */}
-        <div className="p-4 border-t border-[var(--surface-border)] flex items-center gap-3">
+        <div className="p-4 flex items-center gap-3" style={{ boxShadow: "inset 0 1px 0 var(--rp-line)" }}>
           <UserButton appearance={{
             elements: {
               avatarBox: "w-8 h-8 ring-1 ring-[var(--teal)] ring-offset-1 ring-offset-[var(--surface-base)]",

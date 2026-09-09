@@ -5,6 +5,7 @@ import ContactsTable from "@/components/contacts/ContactsTable"
 import { AddContactDialog } from "@/components/contacts/AddContactDialog"
 import { GlassCard } from "@/components/ui/glass-card"
 import { Users } from "lucide-react"
+import { Counter } from "@/elite/motion"
 import type { PlanStatus } from "@/app/api/settings/plan/route"
 import type { ContactWithRelations } from "@/lib/types"
 
@@ -50,18 +51,31 @@ export default function ContactsPage() {
   return (
     <div className="flex flex-col h-screen">
       {/* Page header */}
-      <div className="flex items-center gap-3 px-6 py-4 border-b border-[var(--surface-border)] shrink-0">
-        <Users className="w-5 h-5 text-[var(--teal)]" />
-        <div>
-          <h1 className="text-lg font-bold text-white" style={{ fontFamily: "'Playfair Display', serif" }}>
+      <div className="flex items-center gap-3 px-6 py-4 shrink-0"
+        style={{ background: "var(--rp-surface-2)", boxShadow: "inset 0 -1px 0 var(--rp-line-strong)" }}>
+        <Users className="w-5 h-5" style={{ color: "var(--teal-light)" }} />
+        <div className="min-w-0">
+          <h1 className="text-lg font-bold" style={{ fontFamily: "'Playfair Display', serif", color: "var(--text-primary)" }}>
             Contacts
           </h1>
-          <p className="text-xs text-[var(--text-muted)]">
+          <p className="text-[12px]" style={{ color: "var(--text-secondary)" }}>
             {plan.data
-              ? `${plan.data.contacts.toLocaleString()} of ${plan.data.allowance.toLocaleString()} on ${plan.data.plan.label}`
-              : "Relationship database"}
+              ? <>
+                  <span className="font-mono tabular-nums" style={{ color: "var(--text-primary)" }}>
+                    <Counter to={plan.data.contacts} />
+                  </span>
+                  {` of ${plan.data.allowance.toLocaleString()} on ${plan.data.plan.label}`}
+                </>
+              : "The book. Every field the note is written from."}
           </p>
         </div>
+        {/* The soft cap is a notice, never a block: Rapport does not refuse a
+            contact or stop an import. */}
+        {plan.data && (
+          <span className="ml-auto rp-cap" aria-hidden>
+            <span style={{ width: `${Math.min(100, Math.round((plan.data.contacts / Math.max(1, plan.data.allowance)) * 100))}%` }} />
+          </span>
+        )}
       </div>
 
       {plan.data?.notice && (

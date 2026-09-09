@@ -21,26 +21,27 @@ import ContactSlidePanel from "./ContactSlidePanel"
 import { cn, getInitials, formatDate } from "@/lib/utils"
 import type { ContactWithRelations } from "@/lib/types"
 import { TIERS, TIER_HINT, normalizeTier } from "@/lib/tier-labels"
+import { StatusChip } from "@/elite/motion"
+import type { Status } from "@/elite/motion"
 
 type Contact = ContactWithRelations
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-const TH: React.CSSProperties = {
-  padding: "7px 10px", boxSizing: "border-box", position: "relative",
-  whiteSpace: "nowrap", fontSize: "10px", fontWeight: 700,
-  textTransform: "uppercase", letterSpacing: "0.08em",
-  color: "#9BB0C6",
-  borderBottom: "1px solid rgba(43,168,162,0.10)",
-  background: "rgba(9,17,31,0.95)",
-}
+/* Geometry only. Every colour, hairline, padding and type value now comes from
+   .elite-table in the kit — a sticky header drawn as `inset 0 -1px 0` rather
+   than a border-bottom, so the grid cannot shift by a pixel the moment the
+   header sticks (the classic "table jumps on scroll" bug), and row hover as a
+   surface change rather than an outline. */
+const TH: React.CSSProperties = { boxSizing: "border-box", position: "sticky", top: 0 }
 const TD: React.CSSProperties = {
-  padding: "6px 10px", boxSizing: "border-box", verticalAlign: "middle",
-  overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis",
-  fontSize: "13px", fontWeight: 500,
-  color: "rgba(226,232,240,0.85)",
-  borderBottom: "1px solid rgba(148,163,184,0.04)",
+  boxSizing: "border-box", overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis",
 }
+
+/** Columns whose contents are digits. Right-aligned and tabular down the WHOLE
+ *  column — an alignment that is right on some rows and left on others is worse
+ *  than no alignment at all. */
+const NUMERIC = new Set(["score", "birthday", "anniversary", "createdAt"])
 
 function ScoreBadge({ score }: { score: number }) {
   const color = score >= 70 ? "var(--teal)" : score >= 40 ? "var(--gold)" : "var(--coral)"
@@ -54,11 +55,41 @@ function ScoreBadge({ score }: { score: number }) {
   )
 }
 
+/** Status is a colour AND a glow, in its own column, never raw text in a cell.
+ *  The dot's bloom is the second channel, so the chip still separates when it is
+ *  screenshotted into Slack or read by somebody with a red/green deficiency. */
 function StatusBadge({ status }: { status: string }) {
-  const map: Record<string, string> = {
-    active: "badge-teal", inactive: "badge-gray", do_not_contact: "badge-coral"
+  const map: Record<string, Status> = {
+    active: "ok", inactive: "idle", do_not_contact: "bad", unsubscribed: "bad",
   }
-  return <span className={cn("badge", map[status] ?? "badge-gray")}>{status.replace("_", " ")}</span>
+  const word: Record<string, string> = {
+    active: "Active", inactive: "Dormant", do_not_contact: "Do not contact",
+  }
+  return <StatusChip status={map[status] ?? "idle"}>{word[status] ?? status.replace("_", " ")}</StatusChip>
+}
+
+/** What Rapport is actually watching on this person. An agent should be able to
+ *  see, down a column, which rows will ever raise an occasion — that is the
+ *  difference between a contact list and a book. */
+function WatchingCell({ c }: { c: Contact }) {
+  const on: Array<[string, string, Status]> = [
+    ["Bday", c.birthdate ? "y" : "", "ok"],
+    ["Anniv", c.anniversary ? "y" : "", "ok"],
+    ["Renewal", c.policyRenewalDate ? "y" : "", "warn"],
+    ["Loan", c.loanClosedDate ? "y" : "", "info"],
+    ["Home", c.homePurchaseDate ? "y" : "", "info"],
+  ]
+  const set = on.filter(([, v]) => v)
+  if (set.length === 0) {
+    return <span className="rp-dark-row">nothing to watch</span>
+  }
+  return (
+    <span className="flex items-center gap-1">
+      {set.map(([label, , tone]) => (
+        <StatusChip key={label} status={tone} className="rp-chip-xs">{label}</StatusChip>
+      ))}
+    </span>
+  )
 }
 
 // ── Column Definitions ────────────────────────────────────────────────────────
@@ -226,6 +257,9 @@ function buildColumns(onUpdate: (id: string, field: string, value: unknown) => v
 
     // Status
     { id: "status", accessorKey: "status", size: 110, header: "Status", cell: ({ getValue }) => <StatusBadge status={getValue() as string} /> },
+
+    // What Rapport is watching on this person
+    { id: "watching", size: 210, enableSorting: false, header: "Watching", cell: ({ row }) => <WatchingCell c={row.original} /> },
 
     // Birthday
     { id: "birthday", accessorKey: "birthdate", size: 110, header: "Birthday", cell: ({ getValue }) => formatDate(getValue() as string | null, { month: "short", day: "numeric" }) },
@@ -447,12 +481,20 @@ export default function ContactsTable({ contacts, onUpdate, onDelete, onAdd, onI
       {/* Table wrapper */}
       <div className="flex flex-1 overflow-hidden relative">
         <div ref={parentRef} className="flex-1 overflow-auto">
-          <table className="rapport-table" style={{ width: table.getTotalSize(), tableLayout: "fixed" }}>
+          <table className="elite-table is-compact rp-grid" style={{ width: table.getTotalSize(), tableLayout: "fixed" }}>
             <thead style={{ position: "sticky", top: 0, zIndex: 20 }}>
               {table.getHeaderGroups().map(hg => (
                 <tr key={hg.id}>
                   {hg.headers.map(header => (
-                    <th key={header.id} style={{ ...TH, width: header.getSize() }}
+                    <th key={header.id}
+                      className={cn(NUMERIC.has(header.column.id) && "num")}
+                      aria-sort={
+                        !header.column.getCanSort() ? undefined
+                        : header.column.getIsSorted() === "asc" ? "ascending"
+                        : header.column.getIsSorted() === "desc" ? "descending"
+                        : "none"
+                      }
+                      style={{ ...TH, width: header.getSize() }}
                       onClick={header.column.getToggleSortingHandler()}>
                       <div className="flex items-center gap-1">
                         {flexRender(header.column.columnDef.header, header.getContext())}
@@ -479,12 +521,13 @@ export default function ContactsTable({ contacts, onUpdate, onDelete, onAdd, onI
                       selectedId === row.original.id && "bg-[rgba(43,168,162,0.08)]"
                     )}
                     onClick={() => setSelectedId(prev => prev === row.original.id ? null : row.original.id)}
+                    aria-selected={row.getIsSelected() || selectedId === row.original.id}
                     initial={false}
-                    whileHover={{ backgroundColor: "rgba(43,168,162,0.04)" }}
-                    transition={{ duration: 0.1 }}
                   >
                     {row.getVisibleCells().map(cell => (
-                      <td key={cell.id} style={{ ...TD, width: cell.column.getSize() }}>
+                      <td key={cell.id}
+                        className={cn(NUMERIC.has(cell.column.id) && "num")}
+                        style={{ ...TD, width: cell.column.getSize() }}>
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                       </td>
                     ))}
@@ -499,11 +542,36 @@ export default function ContactsTable({ contacts, onUpdate, onDelete, onAdd, onI
               <div className="w-6 h-6 border-2 border-[var(--teal)] border-t-transparent rounded-full animate-spin" />
             </div>
           )}
+          {/* A designed empty state, and it branches. "No data" tells an operator
+              nothing about whether the filter is wrong or the work is not done;
+              an empty FILTER and an empty BOOK need different sentences and
+              different next actions. */}
+          {!isLoading && contacts.length > 0 && rows.length === 0 && (
+            <div className="elite-empty">
+              <span className="elite-empty__mark"><Search className="w-5 h-5" /></span>
+              <p className="elite-empty__title">Nothing matches &ldquo;{globalFilter}&rdquo;</p>
+              <p className="elite-empty__body">
+                {contacts.length.toLocaleString()} contacts are loaded; none of them carries that
+                text in any column. Search runs across every field, including hometown, college and
+                internal notes.
+              </p>
+              <button className="btn-ghost btn-primary" onClick={() => setGlobalFilter("")}>Clear the search</button>
+            </div>
+          )}
           {!isLoading && contacts.length === 0 && (
-            <div className="flex flex-col items-center justify-center h-60 gap-3">
-              <User className="w-10 h-10 text-[var(--text-muted)]" />
-              <p className="text-[var(--text-muted)]">No contacts yet - import a CSV or talk to Paige</p>
-              <GlassButton size="sm" onClick={onImport}><Upload className="w-3.5 h-3.5" /> Import CSV</GlassButton>
+            <div className="elite-empty">
+              <span className="elite-empty__mark"><User className="w-5 h-5" /></span>
+              <p className="elite-empty__title">This is where the book lives</p>
+              <p className="elite-empty__body">
+                Import a CSV out of HawkSoft, EZLynx, Follow Up Boss or a spreadsheet. Rapport
+                recognises the renewal, closing and purchase columns under the names those systems
+                actually export, and reads 3/15/2026 as happily as 2026-03-15. Nothing sends until
+                you have approved it.
+              </p>
+              <div className="flex gap-2 mt-1">
+                <GlassButton size="sm" onClick={onImport}><Upload className="w-3.5 h-3.5" /> Import a CSV</GlassButton>
+                <GlassButton size="sm" variant="ghost" onClick={onAdd}><Plus className="w-3.5 h-3.5" /> Add one by hand</GlassButton>
+              </div>
             </div>
           )}
         </div>
