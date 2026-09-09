@@ -39,17 +39,21 @@
 import { readFileSync } from "node:fs"
 import { join } from "node:path"
 import sharp from "sharp"
-import opentype from "opentype.js"
+// Named imports, not a default. opentype.js's ESM build (dist/opentype.mjs) has no
+// default export, so `import opentype from "opentype.js"` builds fine under tsx's CJS
+// interop and then fails the Turbopack production build with "Export default doesn't
+// exist in target module" - a break that only ever shows up on the deploy.
+import { parse as parseFont, type Font } from "opentype.js"
 
 const FONT_DIR = join(process.cwd(), "assets", "fonts")
 
 /** Loaded once per lambda, not once per card. */
-let scriptFont: opentype.Font | null = null
-let smallFont: opentype.Font | null = null
+let scriptFont: Font | null = null
+let smallFont: Font | null = null
 
 function fonts() {
-  if (!scriptFont) scriptFont = opentype.parse(toArrayBuffer(readFileSync(join(FONT_DIR, "PinyonScript-Regular.ttf"))))
-  if (!smallFont) smallFont = opentype.parse(toArrayBuffer(readFileSync(join(FONT_DIR, "CormorantGaramond-SemiBold.ttf"))))
+  if (!scriptFont) scriptFont = parseFont(toArrayBuffer(readFileSync(join(FONT_DIR, "PinyonScript-Regular.ttf"))))
+  if (!smallFont) smallFont = parseFont(toArrayBuffer(readFileSync(join(FONT_DIR, "CormorantGaramond-SemiBold.ttf"))))
   return { script: scriptFont, small: smallFont }
 }
 
@@ -70,7 +74,7 @@ import { GOLD } from "./card-foil"
  * like a mistake, and the plate's composition assumes a size.
  */
 function centredPath(
-  font: opentype.Font,
+  font: Font,
   text: string,
   cx: number,
   y: number,
