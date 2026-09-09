@@ -456,3 +456,152 @@ h3, h4, h5, h6 {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   THE APP LAYER — dashboard, panels, queue, book health.
+   Built on the elite kit's tokens: surfaces are color-mix levels, hairlines are
+   inset shadows, every figure is tabular, every panel that can be empty owns a
+   designed empty state. Nothing here invents a colour.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.rp-page { padding: 26px; max-width: 1320px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+
+.rp-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
+.rp-h1 {
+  font-family: 'Playfair Display', Georgia, serif; font-weight: 800;
+  font-size: clamp(1.7rem, 3.2vw, 2.5rem); line-height: 1.12; letter-spacing: -.02em;
+  color: var(--text-primary); margin: 0;
+}
+.rp-h1-accent {
+  background: linear-gradient(135deg, var(--teal-light), var(--teal));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+
+.rp-tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+/* The kit's stat card is 2px because the editorial register is nearly square.
+   Rapport's register is soft, so the radius is the only thing overridden. */
+.rp-stat { border-radius: var(--radius-lg); padding: 18px 20px; }
+
+.rp-cols { display: grid; grid-template-columns: minmax(0, 1.75fr) minmax(300px, 1fr); gap: 18px; align-items: start; }
+.rp-side { display: flex; flex-direction: column; gap: 18px; }
+
+/* ── Panel ────────────────────────────────────────────────────────────────
+   One surface tier above the page, with the hairline drawn as an inset so it
+   can never shift the layout. */
+.rp-panel {
+  background: var(--rp-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: inset 0 0 0 1px var(--rp-line), 0 18px 40px -24px rgba(0,0,0,.7);
+  overflow: hidden;
+}
+.rp-panel-head {
+  display: flex; align-items: center; gap: 9px;
+  padding: 13px 18px;
+  background: var(--rp-surface-2);
+  box-shadow: inset 0 -1px 0 var(--rp-line-strong);
+}
+.rp-panel-title {
+  font-family: 'Playfair Display', Georgia, serif; font-weight: 700;
+  font-size: 16px; letter-spacing: -.01em; color: var(--text-primary); margin: 0;
+}
+.rp-panel-head a { text-decoration: none; }
+.rp-panel-head a:hover { text-decoration: underline; }
+
+.rp-live {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--teal-light); box-shadow: 0 0 8px var(--teal-light);
+  animation: elite-live-pulse 1.8s ease-in-out infinite;
+}
+
+/* ── Today's queue ─────────────────────────────────────────────────────── */
+.rp-queue { padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+.rp-queue-row {
+  display: flex; align-items: center; gap: 14px;
+  padding: 12px; border-radius: var(--radius-md);
+  background: var(--rp-surface-1);
+  box-shadow: inset 0 0 0 1px var(--rp-line);
+  transition: background-color 160ms, box-shadow 160ms, transform 240ms cubic-bezier(.22,1,.36,1);
+}
+.rp-queue-row:hover { background: var(--rp-surface-hover); box-shadow: inset 0 0 0 1px var(--rp-line-highlight); }
+/* The card is the artefact. It is never cropped: object-fit cover on a portrait
+   card cuts the printed name off the bottom of every one of them. */
+.rp-queue-card {
+  width: 62px; aspect-ratio: 4 / 5; object-fit: contain; flex: none;
+  border-radius: 8px; background: #fff;
+  box-shadow: 0 6px 16px -6px rgba(0,0,0,.6), inset 0 0 0 1px rgba(255,255,255,.14);
+}
+.rp-avatar {
+  width: 22px; height: 22px; border-radius: 50%; flex: none;
+  display: inline-grid; place-items: center;
+  font-size: 10px; font-weight: 700; letter-spacing: .02em; color: #04201E;
+  background: linear-gradient(135deg, var(--teal-light), var(--teal));
+}
+.rp-queue-go {
+  width: 32px; height: 32px; border-radius: 50%; flex: none;
+  display: grid; place-items: center; color: var(--text-muted);
+  box-shadow: inset 0 0 0 1px var(--rp-line);
+  transition: color 150ms, box-shadow 150ms, transform 150ms;
+}
+.rp-queue-go:hover { color: var(--teal-light); box-shadow: inset 0 0 0 1px var(--rp-line-highlight); transform: translateX(2px); }
+.rp-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.rp-more {
+  display: inline-flex; align-items: center; gap: 6px; align-self: flex-start;
+  padding: 8px 4px; font-size: 12.5px; font-weight: 600; color: var(--teal-light);
+}
+.rp-skel { height: 74px; border-radius: var(--radius-md); }
+
+/* ── Book health ───────────────────────────────────────────────────────── */
+.rp-meter {
+  margin-top: 10px; height: 6px; border-radius: 999px; overflow: hidden;
+  background: var(--rp-surface-sunk); box-shadow: inset 0 0 0 1px var(--rp-line);
+}
+.rp-meter > span {
+  display: block; height: 100%; border-radius: 999px;
+  background: linear-gradient(90deg, var(--teal), var(--gold));
+  transition: width 900ms cubic-bezier(.22,1,.36,1);
+}
+.rp-facts { margin: 16px 0 0; display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--rp-line); border-radius: 10px; overflow: hidden; }
+.rp-facts > div { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; padding: 9px 11px; background: var(--rp-surface-1); }
+.rp-facts dt { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--text-muted); }
+.rp-facts dd { margin: 0; font-family: 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; font-size: 14px; font-weight: 600; color: var(--text-primary); }
+.rp-tiers { display: flex; gap: 6px; margin-top: 12px; flex-wrap: wrap; }
+.rp-nudge { display: flex; gap: 7px; margin: 14px 0 0; font-size: 12.5px; line-height: 1.6; color: var(--text-secondary); }
+.rp-nudge a { color: var(--teal-light); }
+
+/* ── This week ─────────────────────────────────────────────────────────── */
+.rp-week { list-style: none; margin: 0; padding: 8px; display: flex; flex-direction: column; gap: 2px; }
+.rp-week li { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 12px; transition: background-color 140ms; }
+.rp-week li:hover { background: var(--rp-surface-hover); }
+.rp-daychip {
+  width: 38px; flex: none; border-radius: 10px; padding: 4px 0; text-align: center;
+  background: var(--rp-surface-sunk); box-shadow: inset 0 0 0 1px var(--rp-line);
+}
+.rp-daychip b { display: block; font-size: 9px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--teal-light); }
+.rp-daychip i { display: block; font-style: normal; font-size: 15px; font-weight: 700; line-height: 1.1; font-variant-numeric: tabular-nums; color: var(--text-primary); }
+.rp-week-card { width: 26px; aspect-ratio: 4 / 5; object-fit: contain; border-radius: 4px; background: #fff; flex: none; }
+.rp-week-name { display: block; font-size: 13px; font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rp-week-why  { display: block; font-size: 11.5px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ── Recently sent ─────────────────────────────────────────────────────── */
+.rp-sent { padding: 16px; display: grid; grid-template-columns: repeat(auto-fill, minmax(168px, 1fr)); gap: 14px; }
+.rp-sent-card {
+  margin: 0; border-radius: var(--radius-md); overflow: hidden;
+  background: var(--rp-surface-1); box-shadow: inset 0 0 0 1px var(--rp-line);
+  transition: box-shadow 240ms, transform 240ms cubic-bezier(.22,1,.36,1);
+}
+.rp-sent-card:hover { box-shadow: inset 0 0 0 1px var(--rp-line-highlight), 0 20px 40px -22px rgba(0,0,0,.8); }
+.rp-sent-card img { display: block; width: 100%; aspect-ratio: 4 / 5; object-fit: contain; background: #fff; }
+.rp-sent-card figcaption { padding: 10px 12px; display: flex; flex-direction: column; gap: 3px; }
+.rp-sent-name { font-size: 13px; font-weight: 700; color: var(--text-primary); }
+.rp-sent-why  { font-size: 11.5px; color: var(--text-muted); }
+.rp-sent-meta { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 4px; font-size: 11px; font-family: 'JetBrains Mono', ui-monospace, monospace; color: var(--text-faint); }
+
+@media (max-width: 1100px) {
+  .rp-tiles { grid-template-columns: repeat(2, 1fr); }
+  .rp-cols  { grid-template-columns: 1fr; }
+}
+@media (max-width: 640px) {
+  .rp-page { padding: 16px; }
+  .rp-tiles { grid-template-columns: 1fr; }
+  .rp-queue-card { width: 52px; }
+}
