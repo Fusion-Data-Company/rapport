@@ -1,6 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 
 @import "tailwindcss";
+@import "../elite/elite.css";
 @config "../../tailwind.config.ts";
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -78,6 +79,89 @@
   --info:    var(--sky);
 }
 
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   THE ELITE CONTRACT — Rapport's own values, nothing borrowed.
+   The kit paints nothing it has not been given; these six required tokens and
+   the recommended set below are the whole of what Rapport declares. Teal and
+   Playfair stay; what changes is the level.
+
+   ── MEASURED CONTRAST ────────────────────────────────────────────────────
+   Every tier computed (WCAG 2.1 relative luminance), not eyeballed. The two
+   grounds are the page (#09111F) and the card surface, which is the flattened
+   value of rgba(15,28,48,.88) over the page = #0E1B2E. "elevated" is
+   rgba(20,36,58,.95) over the page = #132339 — panels, sticky headers, the
+   slide-out.
+
+     token                    page    surface  elevated
+     ink        #F4F8FC      17.70     16.20     14.83
+     ink-2      #C3D2E2      12.27     11.23     10.28
+     ink-3      #9BB0C6       8.47      7.75      7.10
+     ink-4      #8098B1       6.34      5.80      5.31   (captions only)
+     accent     #2BA8A2       6.50      5.95      5.44
+     accent-2   #3CC4BD       8.84      8.09      7.40
+     trim/gold  #FFD23F      13.08     11.97     10.96
+     ok         #4ADE80      10.84      9.92      9.08
+     warn       #FFD23F      13.08     11.97     10.96
+     bad        #FF6B5A       6.75      6.18      5.65
+     info       #5DADE2       7.68      7.03      6.44
+     coral      #FF8A6A       8.18      7.49      6.85
+
+   Foregrounds ON a fill:
+     #04201E on accent #2BA8A2 ............ 5.87   (.btn-primary, chips)
+     #0A0F1E on gold  #FFD23F ............. 13.22  (.btn-gold)
+     #FFFFFF on coral-dark #B93C1E ........ 5.31   (.btn-coral)
+
+   AA (4.5:1) is cleared by every tier on every ground; body, labels and every
+   status clear 5.3:1 and the three text tiers clear 7:1 on the card surface.
+   The old CTA was #FFF on a #2BA8A2 gradient — 2.91:1, a fail, and the single
+   most-clicked element in the product. It is now near-black on the mint fill.
+
+   Two tokens carry the failure modes the kit names: --elite-sheen is left at
+   the dark-register default (a white highlight is correct over navy), and
+   --elite-shade is deepened because a shadow over #09111F needs to be black,
+   not ink.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* required */
+  --elite-surface: #0E1B2E;
+  --elite-ink:     #F4F8FC;
+  --elite-ink-2:   #C3D2E2;
+  --elite-ink-3:   #9BB0C6;
+  --elite-accent:      #2BA8A2;
+  --elite-accent-deep: #0F5450;
+
+  /* recommended */
+  --elite-bg:        #09111F;
+  --elite-accent-on: #04201E;   /* near-black teal ON the mint fill: 5.87:1 */
+  --elite-accent-2:  #3CC4BD;
+  --elite-accent-rgb: 43,168,162;
+
+  /* the trim. Rapport's metal is the Flip7 gold, and it is the only thing
+     that paints the corner ticks, the section rule, the rail and the sweep. */
+  --elite-trim: #FFD23F;
+
+  /* status pairs — colour AND glow, per the kit */
+  --elite-ok:   #4ADE80;
+  --elite-warn: #FFD23F;
+  --elite-bad:  #FF6B5A;
+  --elite-info: #5DADE2;
+
+  --elite-rule:  rgba(43, 168, 162, .16);
+  --elite-sheen: rgba(255, 255, 255, .88);
+  --elite-shade: rgba(0, 0, 0, .45);
+
+  /* shape: Rapport's radius scale is softer than the kit default */
+  --elite-radius:       22px;
+  --elite-radius-card:  18px;
+  --elite-radius-input: 12px;
+
+  --elite-font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  --elite-grain-opacity: .05;
+  --elite-dust-opacity:  .38;
+}
+
 /* ── Base ── */
 *, *::before, *::after { box-sizing: border-box; }
 
@@ -141,6 +225,36 @@ h3, h4, h5, h6 {
   background-clip: text;
 }
 
+
+/* ── Surface and border TIERS (THE STANDARD §1) ───────────────────────────
+   Not one card colour. Each tinted level is a color-mix against the ink, so
+   the same six lines would be correct on a light register too. */
+:root {
+  --rp-surface:       #0E1B2E;   /* flattened card ground */
+  --rp-surface-1:     color-mix(in srgb, var(--text-primary) 4%, var(--rp-surface));
+  --rp-surface-2:     color-mix(in srgb, var(--text-primary) 7%, var(--rp-surface));
+  --rp-surface-hover: color-mix(in srgb, var(--text-primary) 6%, var(--rp-surface));
+  --rp-surface-sunk:  #0A1524;
+
+  --rp-line:           rgba(43, 168, 162, .16);
+  --rp-line-strong:    rgba(196, 214, 232, .22);
+  --rp-line-highlight: rgba(43, 168, 162, .45);
+}
+
+/* Hairlines are drawn as an inset shadow, never a border: adding one can then
+   never shift the layout by a pixel or change a grid's rhythm. */
+.rp-hair    { box-shadow: inset 0 0 0 1px var(--rp-line); }
+.rp-hair-up { box-shadow: inset 0 0 0 1px var(--rp-line-strong); }
+
+/* ── The one global rule (kit README) ──────────────────────────────────────
+   `clip`, never `hidden`: overflow-x:hidden on <body> makes <body> the scroll
+   container, window.scrollY freezes at 0, and every scroll-driven thing in
+   elite/motion reads exactly that value. Reveals never fire and nothing in
+   the console says why. */
+@media (max-width: 767px) {
+  html, body { overflow-x: clip; max-width: 100vw; }
+}
+
 /* ── Glass Card ── */
 .glass-card {
   background: var(--surface-card);
@@ -169,8 +283,11 @@ h3, h4, h5, h6 {
   display: inline-flex; align-items: center; justify-content: center;
   gap: 8px;
   padding: 10px 24px;
-  background: linear-gradient(135deg, var(--teal), var(--teal-dark));
-  color: white; font-weight: 600; font-size: 14px;
+  /* Was #fff on the teal gradient: 2.91:1. The most-clicked element in the
+     product failed AA. Near-black teal on the mint fill measures 5.87:1 and
+     the button reads brighter, not duller. */
+  background: linear-gradient(135deg, var(--teal-light), var(--teal));
+  color: #04201E; font-weight: 700; font-size: 14px;
   border-radius: var(--radius-pill);
   border: none; cursor: pointer;
   box-shadow: var(--shadow-teal-glow);
@@ -194,7 +311,8 @@ h3, h4, h5, h6 {
 .btn-gold:hover { box-shadow: 0 8px 32px rgba(255,210,63,0.5); }
 
 .btn-coral {
-  background: linear-gradient(135deg, var(--coral-light), var(--coral-dark));
+  /* #fff needs a deeper coral than #FF8A6A to clear AA: 5.31:1 at the dark end. */
+  background: linear-gradient(135deg, var(--coral-dark), #B93C1E);
   color: white;
   box-shadow: var(--shadow-coral-glow);
 }
@@ -239,7 +357,7 @@ h3, h4, h5, h6 {
 }
 .badge-teal   { background: rgba(43,168,162,0.15); color: var(--teal-light); border: 1px solid rgba(43,168,162,0.25); }
 .badge-coral  { background: rgba(239,108,74,0.15);  color: var(--coral-light); border: 1px solid rgba(239,108,74,0.25); }
-.badge-gold   { background: rgba(255,210,63,0.15);  color: var(--gold-dark);   border: 1px solid rgba(255,210,63,0.25); }
+.badge-gold   { background: rgba(255,210,63,0.15);  color: var(--gold);        border: 1px solid rgba(255,210,63,0.25); }
 .badge-gray   { background: rgba(148,163,184,0.10); color: var(--text-secondary); border: 1px solid rgba(148,163,184,0.15); }
 .badge-green  { background: rgba(39,174,96,0.15);   color: #4ade80;  border: 1px solid rgba(39,174,96,0.25); }
 
