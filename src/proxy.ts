@@ -23,6 +23,12 @@ const isPublicRoute = createRouteMatcher([
   // Inbound contacts from an AMS, a CRM or Zapier. Authorised by the per-tenant
   // token in the path, which is why it cannot sit behind a session check.
   "/api/inbound(.*)",
+  // The card image itself. This is the <img> src in a note, so the people who fetch
+  // it are mail clients and image proxies, months after the send, with no session
+  // and no cookie - a session check here means every card in every inbox is a broken
+  // image. It is authorised by the HMAC over occasion, name and subline, which is
+  // what stops anyone minting a new one.
+  "/api/cards/render",
 ])
 
 const isMarketing = createRouteMatcher(["/", "/pricing", "/terms", "/privacy", "/refunds"])
