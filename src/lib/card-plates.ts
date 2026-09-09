@@ -41,50 +41,74 @@ const SYMPATHY: Plate = { file: "sympathy.jpg", foil: DEEP_GOLD, subline: null }
 const CONGRATS: Plate = { file: "congrats.jpg", foil: GOLD, subline: "Well Earned" }
 const HOLIDAY: Plate = { file: "holiday.jpg", foil: GOLD, subline: "With Warmest Wishes" }
 
-/** OccasionType (src/lib/occasions.ts) to plate. Anything unmapped gets the neutral one,
- *  which is deliberately occasion-free rather than a wrong occasion. */
+/**
+ * WHICH PLATES ARE IN SERVICE, AND WHY THE LIGHT ONES ARE NOT.
+ *
+ * The foil is measured against the actual pixels of the band the name sits in
+ * (y 0.13-0.33, x 0.13-0.87 of the plate), as a WCAG contrast ratio. On 2026-09-09:
+ *
+ *     anniversary  11.64   renewal   11.11   graduation 11.15
+ *     holiday      10.77   congrats  10.63   birthday   10.25
+ *     ---- everything above ships, everything below does not ----
+ *     wedding       2.90   baby-girl  2.40   baby-boy    2.13
+ *     thanks        2.06   home       2.04   getwell     1.62
+ *     sympathy      1.39   retirement 1.16
+ *
+ * Every dark plate clears 10:1. Every light plate fails, and retirement at 1.16 is
+ * gold script on sunlit limewash - the name is simply not there. DEEP_GOLD was meant
+ * to solve this and does not: #A57B32 is still a light-mid tone, and on cream it is
+ * two shades of the same thing.
+ *
+ * The fix is a genuinely dark foil for pale stock - near-black warm brown or deep
+ * ink, the way a letterpress card actually prints on cream - and that is a design
+ * pass, not a mapping. Until then these occasions are NOT offered rather than being
+ * offered with an invisible name, and any occasion that still resolves to a retired
+ * plate falls back to RENEWAL: dark, restrained and occasion-free, so it is never
+ * wrong for the moment even when it is not specific to it.
+ */
 const BY_OCCASION: Record<string, Plate> = {
   birthday: BIRTHDAY,
   child_birthday: BIRTHDAY,
   anniversary: ANNIVERSARY,
   policy_renewal: RENEWAL,
-  home_anniversary: HOME,
-  loan_anniversary: HOME,
-  months_since_close: NEUTRAL,
-  review_request: THANKS,
-  sports_win: NEUTRAL,
-  sports_loss: NEUTRAL,
-  new_baby_boy: BABY_BOY,
-  new_baby_girl: BABY_GIRL,
-  new_baby: BABY_BOY,
-  wedding: WEDDING,
+  home_anniversary: RENEWAL,
+  loan_anniversary: RENEWAL,
+  months_since_close: RENEWAL,
+  review_request: RENEWAL,
+  sports_win: RENEWAL,
+  sports_loss: RENEWAL,
+  new_baby_boy: RENEWAL,
+  new_baby_girl: RENEWAL,
+  new_baby: RENEWAL,
+  wedding: RENEWAL,
   graduation: GRADUATION,
-  retirement: RETIREMENT,
-  new_home: HOME,
-  get_well: GETWELL,
-  sympathy: SYMPATHY,
+  retirement: RENEWAL,
+  new_home: RENEWAL,
+  get_well: RENEWAL,
+  sympathy: RENEWAL,
   congratulations: CONGRATS,
   holiday: HOLIDAY,
-  thank_you: THANKS,
+  thank_you: RENEWAL,
 }
 
-/** Every occasion the card system can set, for the gallery and the send picker. */
+/**
+ * The occasions actually offered. Six, not fifteen — one per plate whose foil is
+ * legible. The other nine plates are cut and committed and come back the moment
+ * there is a foil that survives on pale stock; see the contrast table above.
+ */
 export const CARD_OCCASIONS: { id: string; label: string }[] = [
   { id: "birthday", label: "Birthday" },
   { id: "anniversary", label: "Anniversary" },
   { id: "policy_renewal", label: "Renewal" },
-  { id: "home_anniversary", label: "Home anniversary" },
-  { id: "new_home", label: "New home" },
-  { id: "review_request", label: "Thank you" },
   { id: "congratulations", label: "Congratulations" },
-  { id: "wedding", label: "Wedding" },
-  { id: "new_baby_boy", label: "It's a boy" },
-  { id: "new_baby_girl", label: "It's a girl" },
   { id: "graduation", label: "Graduation" },
-  { id: "retirement", label: "Retirement" },
-  { id: "get_well", label: "Get well" },
-  { id: "sympathy", label: "Sympathy" },
   { id: "holiday", label: "Holidays" },
+]
+
+/** Cut, committed, and held back until the foil reads on them. */
+export const PLATES_AWAITING_A_DARK_FOIL = [
+  "wedding.jpg", "baby-boy.jpg", "baby-girl.jpg", "thanks.jpg",
+  "home.jpg", "getwell.jpg", "sympathy.jpg", "retirement.jpg",
 ]
 
 export function plateFor(occasion: string): Plate {
