@@ -51,19 +51,26 @@ export async function GET(req: NextRequest) {
   }
 
   const plate = plateFor(occasion)
-  let art: Buffer
+  let img: Buffer
   try {
-    art = await readFile(join(process.cwd(), "public", "img", "plates", plate.file))
-  } catch {
-    return new Response("plate missing", { status: 500 })
+    const art = await readFile(join(process.cwd(), "public", "img", "plates", plate.file))
+    img = await composeCard({
+      plate: art,
+      line: occasionLine(occasion, name),
+      subline: subline ?? plate.subline,
+      foil: plate.foil,
+    })
+  } catch (e) {
+    // Say which file and which step. The first production failure of this route was an
+    // unhandled throw that surfaced as a bare 500 HTML page, and the cause - the fonts
+    // and plates not being traced into the lambda - was invisible from the outside.
+    const why = e instanceof Error ? e.message : String(e)
+    console.error(`[cards] compose failed for ${plate.file} (cwd ${process.cwd()}): ${why}`)
+    return new Response(`could not compose the card: ${why}`, {
+      status: 500,
+      headers: { "Content-Type": "text/plain" },
+    })
   }
-
-  const img = await composeCard({
-    plate: art,
-    line: occasionLine(occasion, name),
-    subline: subline ?? plate.subline,
-    foil: plate.foil,
-  })
 
   return new Response(new Uint8Array(img), {
     headers: {
