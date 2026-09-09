@@ -123,7 +123,17 @@ export type ComposeOptions = {
   /** The small tracked line beneath it. Optional. */
   subline?: string | null
   foil?: Foil
+  /** Longest edge of the delivered image. Defaults to DELIVERY_WIDTH. */
+  maxWidth?: number
 }
+
+/**
+ * The plates are generated at 1664x2080 so there is real resolution behind the type and
+ * a print run stays possible. That is not what should land in an inbox: a 500 KB card on
+ * a phone on cell data is a card nobody waits for. The type is composed at full plate
+ * resolution — so the script stays crisp — and only the finished image is reduced.
+ */
+export const DELIVERY_WIDTH = 1200
 
 /**
  * Set the name onto the plate and return a PNG.
@@ -190,16 +200,34 @@ export async function composeCard(opts: ComposeOptions): Promise<Buffer> {
     .blur(Math.max(1, W * 0.004))
     .toBuffer()
 
-  return sharp(opts.plate)
+  const cap = opts.maxWidth ?? DELIVERY_WIDTH
+
+  // Two passes, deliberately. sharp applies resize BEFORE composite no matter which
+  // order the calls are written in, so chaining .resize() onto this pipeline shrinks the
+  // plate first and then rejects the full-size type overlay with "Image to composite must
+  // have same dimensions or smaller". Compose at plate resolution, then reduce the
+  // finished card — which is also the right order for quality: the script is rasterised
+  // at 1664px and downsampled, rather than being drawn small.
+  const full = await sharp(opts.plate)
     .composite([
       { input: shadow, top: 0, left: 0 },
       { input: layer(foil.fill), top: 0, left: 0 },
     ])
+    .png()
+    .toBuffer()
+
+  return sharp(full)
+    .resize({ width: Math.min(W, cap), withoutEnlargement: true })
     // JPEG, not PNG. The output is a photographic plate with type on it and it is going
     // into an email: 500 KB of PNG versus 150 KB of q90 JPEG, for no visible difference,
     // is a spam-filter argument nobody needs to have. mozjpeg keeps the foil clean at the
     // edges, which is where a cheap encoder shows its teeth on fine script.
-    .jpeg({ quality: 90, mozjpeg: true, chromaSubsampling: "4:4:4" })
+    // q82 with mozjpeg, not q90. On the plates with high-frequency detail — brick, stone,
+    // knitted wool — q90 produced 730 KB cards, which is a slow image on cell data for no
+    // visible gain. 4:4:4 chroma is kept regardless of quality: the foil script is a thin
+    // saturated line on a coloured ground, and that is exactly what chroma subsampling
+    // smears.
+    .jpeg({ quality: 82, mozjpeg: true, chromaSubsampling: "4:4:4" })
     .toBuffer()
 }
 
