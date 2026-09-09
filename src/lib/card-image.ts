@@ -25,6 +25,8 @@
  * night report. No other vendor is contacted. OpenRouter is not used for images.
  */
 
+import { cardUrl } from "./card-plates"
+
 // ── The brief ────────────────────────────────────────────────────────────────
 
 export type CardBrief = {
@@ -297,7 +299,7 @@ export function cardGenerationConfigured(): boolean {
 
 // ── What the send path calls ─────────────────────────────────────────────────
 
-export type CardSource = "generated" | "tenant" | "system" | "none"
+export type CardSource = "composed" | "generated" | "tenant" | "system" | "none"
 
 export type ResolvedCard = {
   imageUrl: string | null
@@ -321,9 +323,16 @@ export type FallbackCard = {
 /**
  * One named card for one note.
  *
- * Generates when a provider is configured, and falls back to the occasion's own system
- * card otherwise, so a note is never sent bare and a missing credential can never take
- * the product down.
+ * Three tiers, in this order:
+ *
+ *   1. The COMPOSED card - generated plate, name typeset onto it by card-compose. This
+ *      is the product. It is free, instant, and spells the name correctly every time,
+ *      which a generative model does not: grok-imagine-image was asked for this exact
+ *      card on 2026-09-09 and returned "HAPPY BIRTHDAY ROB ROB".
+ *   2. A configured generative provider, if one is ever set. Kept because the seam is
+ *      cheap to keep and a future model may be worth using for the ARTWORK.
+ *   3. The occasion's own system card, so a note is never sent bare and a missing
+ *      credential can never take the product down.
  */
 export async function resolveCard(opts: {
   occasion: string
@@ -341,6 +350,20 @@ export async function resolveCard(opts: {
     line,
     ...(error ? { error } : {}),
   })
+
+  // The composed card first. No network, no key, no cost, no chance of a misspelling.
+  // The plate chooses its own subline. The sender's line is prose and belongs in the
+  // note, not set as tracked capitals under the name.
+  const composed = cardUrl(opts.occasion, opts.name)
+  if (composed) {
+    return {
+      imageUrl: composed,
+      thumbnailUrl: null,
+      templateId: opts.fallback?.id ?? null,
+      source: "composed",
+      line,
+    }
+  }
 
   const p = provider()
   if (!p) return fall()
